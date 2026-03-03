@@ -6,11 +6,24 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Fit } from '@/types/database';
-import { Plus } from 'lucide-react';
+import { Plus, Shirt } from 'lucide-react';
+import { CreateOutfitModal } from '@/components/outfits/CreateOutfitModal';
+import { OutfitCard } from '@/components/outfits/OutfitCard';
+import { toast } from 'sonner';
+
+interface Outfit {
+  id: string;
+  name: string;
+  item_ids: string[];
+  created_at: string;
+}
 
 export default function MyFits() {
   const [fits, setFits] = useState<Fit[]>([]);
+  const [outfits, setOutfits] = useState<Outfit[]>([]);
   const [loading, setLoading] = useState(true);
+  const [outfitModalOpen, setOutfitModalOpen] = useState(false);
+  const [editingOutfit, setEditingOutfit] = useState<Outfit | null>(null);
   const { user, profile } = useAuth();
   const navigate = useNavigate();
 
@@ -21,6 +34,7 @@ export default function MyFits() {
     }
     if (profile) {
       fetchMyFits();
+      fetchMyOutfits();
     }
   }, [user, profile, navigate]);
 
@@ -43,6 +57,24 @@ export default function MyFits() {
     setLoading(false);
   };
 
+  const fetchMyOutfits = async () => {
+    if (!profile) return;
+    const { data } = await supabase
+      .from('outfits')
+      .select('*')
+      .eq('user_id', profile.id)
+      .order('created_at', { ascending: false });
+    if (data) setOutfits(data as Outfit[]);
+  };
+
+  const handleDeleteOutfit = async (id: string) => {
+    const { error } = await supabase.from('outfits').delete().eq('id', id);
+    if (!error) {
+      toast.success('Outfit deleted');
+      fetchMyOutfits();
+    }
+  };
+
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8">
@@ -53,12 +85,18 @@ export default function MyFits() {
               Manage the fits you've listed for rent
             </p>
           </div>
-          <Button variant="terracotta" asChild>
-            <Link to="/upload">
-              <Plus className="mr-2 h-4 w-4" />
-              Add New Fit
-            </Link>
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => { setEditingOutfit(null); setOutfitModalOpen(true); }}>
+              <Shirt className="mr-2 h-4 w-4" />
+              Create Outfit
+            </Button>
+            <Button variant="terracotta" asChild>
+              <Link to="/upload">
+                <Plus className="mr-2 h-4 w-4" />
+                Add New Fit
+              </Link>
+            </Button>
+          </div>
         </div>
 
         {loading ? (
@@ -87,7 +125,33 @@ export default function MyFits() {
             ))}
           </div>
         )}
+
+        {/* My Outfits Section */}
+        {outfits.length > 0 && (
+          <div className="mt-16">
+            <h2 className="font-display text-3xl text-foreground">MY OUTFITS</h2>
+            <p className="mt-2 mb-6 text-muted-foreground">Your saved outfit combinations</p>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {outfits.map((outfit) => (
+                <OutfitCard
+                  key={outfit.id}
+                  outfit={outfit}
+                  fits={fits}
+                  onEdit={() => { setEditingOutfit(outfit); setOutfitModalOpen(true); }}
+                  onDelete={() => handleDeleteOutfit(outfit.id)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
+
+      <CreateOutfitModal
+        open={outfitModalOpen}
+        onOpenChange={setOutfitModalOpen}
+        onCreated={fetchMyOutfits}
+        editOutfit={editingOutfit}
+      />
     </Layout>
   );
 }
