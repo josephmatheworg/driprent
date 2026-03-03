@@ -17,9 +17,11 @@ import { Camera, MapPin, Star } from 'lucide-react';
 const profileSchema = z.object({
   username: z.string().trim().min(3, 'Username must be at least 3 characters').max(20, 'Username must be less than 20 characters'),
   full_name: z.string().trim().max(100, 'Name must be less than 100 characters').optional(),
-  bio: z.string().trim().max(500, 'Bio must be less than 500 characters').optional(),
+  bio: z.string().trim().max(300, 'Bio must be less than 300 characters').optional(),
   location: z.string().trim().max(100, 'Location must be less than 100 characters').optional(),
-  phone: z.string().trim().max(20, 'Phone must be less than 20 characters').optional(),
+  phone: z.string().trim().max(20, 'Phone must be less than 20 characters').regex(/^(\+?[\d\s\-()]*)?$/, 'Invalid phone number format').optional(),
+  date_of_birth: z.string().optional(),
+  gender: z.string().trim().max(50).optional(),
 });
 
 type ProfileFormData = z.infer<typeof profileSchema>;
@@ -49,6 +51,8 @@ export default function Profile() {
         bio: profile.bio || '',
         location: profile.location || '',
         phone: profile.phone || '',
+        date_of_birth: profile.date_of_birth || '',
+        gender: profile.gender || '',
       });
     }
   }, [user, profile, navigate, reset]);
@@ -89,12 +93,12 @@ export default function Profile() {
         const fileName = `${user!.id}/avatar.${fileExt}`;
 
         const { error: uploadError } = await supabase.storage
-          .from('fits')
+          .from('avatars')
           .upload(fileName, avatarFile, { upsert: true });
 
         if (uploadError) throw uploadError;
 
-        const { data: urlData } = supabase.storage.from('fits').getPublicUrl(fileName);
+        const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
         avatarUrl = urlData.publicUrl;
       }
 
@@ -106,6 +110,8 @@ export default function Profile() {
           bio: data.bio || null,
           location: data.location || null,
           phone: data.phone || null,
+          date_of_birth: data.date_of_birth || null,
+          gender: data.gender || null,
           avatar_url: avatarUrl,
         })
         .eq('id', profile.id);
@@ -243,6 +249,30 @@ export default function Profile() {
                   type="tel"
                   placeholder="+1 (555) 000-0000"
                   {...register('phone')}
+                  disabled={!isEditing}
+                  className="mt-1.5"
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <Label htmlFor="date_of_birth">Date of Birth</Label>
+                <Input
+                  id="date_of_birth"
+                  type="date"
+                  {...register('date_of_birth')}
+                  disabled={!isEditing}
+                  className="mt-1.5"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="gender">Gender</Label>
+                <Input
+                  id="gender"
+                  placeholder="e.g. Male, Female, Non-binary"
+                  {...register('gender')}
                   disabled={!isEditing}
                   className="mt-1.5"
                 />
