@@ -11,6 +11,8 @@ export interface Profile {
   bio: string | null;
   location: string | null;
   phone: string | null;
+  date_of_birth: string | null;
+  gender: string | null;
   rating: number;
   total_reviews: number;
   created_at: string;
