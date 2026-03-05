@@ -45,12 +45,7 @@ export function Navbar() {
         <div className="flex items-center gap-4">
           {user ? (
             <>
-              <Button variant="terracotta" size="sm" asChild>
-                <Link to="/upload">
-                  <Plus className="mr-1 h-4 w-4" />
-                  List a Fit
-                </Link>
-              </Button>
+
 
               <Button variant="ghost" size="icon" asChild>
                 <Link to="/notifications">
@@ -110,10 +105,10 @@ export function Navbar() {
           ) : (
             <>
               <Button variant="ghost" asChild>
-                <Link to="/auth">Sign In</Link>
+                <Link to="/login">Sign In</Link>
               </Button>
               <Button variant="hero" asChild>
-                <Link to="/auth?mode=signup">Get Started</Link>
+                <Link to="/signup">Get Started</Link>
               </Button>
             </>
           )}

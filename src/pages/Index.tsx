@@ -31,13 +31,13 @@ export default function Index() {
 
               <div className="mt-8 flex flex-wrap gap-4">
               <Button variant="hero" size="xl" asChild>
-                  <Link to="/auth">
+                  <Link to="/login">
                     Login
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
                 <Button variant="hero-outline" size="xl" asChild>
-                  <Link to="/auth?mode=signup">Sign Up</Link>
+                  <Link to="/signup">Sign Up</Link>
                 </Button>
               </div>
 
@@ -155,16 +155,6 @@ export default function Index() {
             List your first fit today and start earning.
           </p>
           <div className="mt-10 flex justify-center gap-4">
-            <Button 
-              size="xl" 
-              className="bg-background text-foreground hover:bg-background/90"
-              asChild
-            >
-              <Link to="/auth?mode=signup">
-                Create Account
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-            </Button>
           </div>
         </div>
       </section>
