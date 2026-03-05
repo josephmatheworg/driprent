@@ -30,14 +30,14 @@ export default function Index() {
               </p>
 
               <div className="mt-8 flex flex-wrap gap-4">
-                <Button variant="hero" size="xl" asChild>
-                  <Link to="/browse">
-                    Start Browsing
+              <Button variant="hero" size="xl" asChild>
+                  <Link to="/auth">
+                    Login
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
                 <Button variant="hero-outline" size="xl" asChild>
-                  <Link to="/upload">List Your Fit</Link>
+                  <Link to="/auth?mode=signup">Sign Up</Link>
                 </Button>
               </div>
 

@@ -4,8 +4,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ProfileGuard } from "@/components/guards/ProfileGuard";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import ProfileSetup from "./pages/ProfileSetup";
 import Browse from "./pages/Browse";
 import FitDetail from "./pages/FitDetail";
 import UploadFit from "./pages/UploadFit";
@@ -26,12 +28,13 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/browse" element={<Browse />} />
-            <Route path="/fit/:id" element={<FitDetail />} />
-            <Route path="/upload" element={<UploadFit />} />
-            <Route path="/my-fits" element={<MyFits />} />
-            <Route path="/rentals" element={<Rentals />} />
-            <Route path="/profile" element={<Profile />} />
+            <Route path="/profile-setup" element={<ProfileSetup />} />
+            <Route path="/browse" element={<ProfileGuard><Browse /></ProfileGuard>} />
+            <Route path="/fit/:id" element={<ProfileGuard><FitDetail /></ProfileGuard>} />
+            <Route path="/upload" element={<ProfileGuard><UploadFit /></ProfileGuard>} />
+            <Route path="/my-fits" element={<ProfileGuard><MyFits /></ProfileGuard>} />
+            <Route path="/rentals" element={<ProfileGuard><Rentals /></ProfileGuard>} />
+            <Route path="/profile" element={<ProfileGuard><Profile /></ProfileGuard>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
