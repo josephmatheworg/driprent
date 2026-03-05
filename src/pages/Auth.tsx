@@ -90,8 +90,9 @@ export default function Auth() {
     } else {
       toast({
         title: 'Account created!',
-        description: 'Please check your email to verify your account.',
+        description: 'Let\'s set up your profile.',
       });
+      navigate('/profile-setup');
     }
   };
 
