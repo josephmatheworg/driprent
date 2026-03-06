@@ -16,9 +16,9 @@
     --popover: 30 20% 98%;
     --popover-foreground: 20 10% 8%;
 
-    /* Terracotta accent - warm and fashion-forward */
-    --primary: 16 65% 55%;
-    --primary-foreground: 30 20% 98%;
+    /* Emerald Green accent - deep satin fabric tone */
+    --primary: 163 70% 22%;
+    --primary-foreground: 0 0% 100%;
 
     --secondary: 30 10% 92%;
     --secondary-foreground: 20 10% 20%;
@@ -34,16 +34,16 @@
 
     --border: 30 12% 88%;
     --input: 30 12% 88%;
-    --ring: 16 65% 55%;
+    --ring: 163 70% 22%;
 
     --radius: 0.75rem;
 
     /* Custom Drip Rent tokens */
     --drip-charcoal: 20 10% 12%;
     --drip-cream: 35 30% 95%;
-    --drip-terracotta: 16 65% 55%;
-    --drip-terracotta-light: 16 65% 65%;
-    --drip-terracotta-dark: 16 65% 45%;
+    --drip-terracotta: 163 70% 22%;
+    --drip-terracotta-light: 163 60% 32%;
+    --drip-terracotta-dark: 163 75% 16%;
     --drip-sage: 140 15% 65%;
     --drip-blush: 350 30% 85%;
     --drip-gold: 40 70% 60%;
@@ -62,12 +62,12 @@
 
     --sidebar-background: 30 15% 96%;
     --sidebar-foreground: 20 10% 20%;
-    --sidebar-primary: 16 65% 55%;
-    --sidebar-primary-foreground: 30 20% 98%;
+    --sidebar-primary: 163 70% 22%;
+    --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 30 12% 90%;
     --sidebar-accent-foreground: 20 10% 20%;
     --sidebar-border: 30 12% 88%;
-    --sidebar-ring: 16 65% 55%;
+    --sidebar-ring: 163 70% 22%;
   }
 
   .dark {
@@ -80,8 +80,8 @@
     --popover: 20 12% 10%;
     --popover-foreground: 30 15% 95%;
 
-    --primary: 16 60% 60%;
-    --primary-foreground: 20 15% 8%;
+    --primary: 163 60% 35%;
+    --primary-foreground: 0 0% 100%;
 
     --secondary: 20 10% 18%;
     --secondary-foreground: 30 15% 90%;
@@ -97,19 +97,19 @@
 
     --border: 20 10% 20%;
     --input: 20 10% 20%;
-    --ring: 16 60% 60%;
+    --ring: 163 60% 35%;
 
     --drip-charcoal: 30 15% 90%;
     --drip-cream: 20 12% 15%;
 
     --sidebar-background: 20 12% 10%;
     --sidebar-foreground: 30 15% 90%;
-    --sidebar-primary: 16 60% 60%;
-    --sidebar-primary-foreground: 20 15% 8%;
+    --sidebar-primary: 163 60% 35%;
+    --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 20 10% 18%;
     --sidebar-accent-foreground: 30 15% 90%;
     --sidebar-border: 20 10% 20%;
-    --sidebar-ring: 16 60% 60%;
+    --sidebar-ring: 163 60% 35%;
   }
 }
 
