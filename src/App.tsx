@@ -7,6 +7,8 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ProfileGuard } from "@/components/guards/ProfileGuard";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 import ProfileSetup from "./pages/ProfileSetup";
 import Browse from "./pages/Browse";
 import FitDetail from "./pages/FitDetail";
