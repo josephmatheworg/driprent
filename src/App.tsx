@@ -30,6 +30,8 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
             <Route path="/profile-setup" element={<ProfileSetup />} />
             <Route path="/browse" element={<ProfileGuard><Browse /></ProfileGuard>} />
             <Route path="/fit/:id" element={<ProfileGuard><FitDetail /></ProfileGuard>} />
