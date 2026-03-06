@@ -7,6 +7,8 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ProfileGuard } from "@/components/guards/ProfileGuard";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 import ProfileSetup from "./pages/ProfileSetup";
 import Browse from "./pages/Browse";
 import FitDetail from "./pages/FitDetail";
@@ -28,6 +30,8 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
             <Route path="/profile-setup" element={<ProfileSetup />} />
             <Route path="/browse" element={<ProfileGuard><Browse /></ProfileGuard>} />
             <Route path="/fit/:id" element={<ProfileGuard><FitDetail /></ProfileGuard>} />
