@@ -158,7 +158,7 @@ export default function ProfileSetup() {
 
       await refreshProfile();
       toast({ title: 'Profile setup complete!' });
-      navigate('/browse');
+      navigate('/home');
     } catch (error: any) {
       console.error('Profile setup error:', error);
       toast({ variant: 'destructive', title: 'Setup failed', description: error.message });

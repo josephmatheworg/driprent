@@ -25,7 +25,7 @@ export default function Login() {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (user) navigate('/');
+    if (user) navigate('/home');
   }, [user, navigate]);
 
   const form = useForm<SignInFormData>({
@@ -48,7 +48,7 @@ export default function Login() {
       });
     } else {
       toast({ title: 'Welcome back!' });
-      navigate('/');
+      navigate('/home');
     }
   };
 

@@ -17,7 +17,7 @@ export function ProfileGuard({ children }: ProfileGuardProps) {
   }
 
   if (!user) {
-    return <Navigate to="/auth" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   // Check if profile is incomplete (missing required onboarding fields)
