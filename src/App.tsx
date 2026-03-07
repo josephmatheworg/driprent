@@ -10,6 +10,7 @@ import Auth from "./pages/Auth";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ProfileSetup from "./pages/ProfileSetup";
+import Home from "./pages/Home";
 import Browse from "./pages/Browse";
 import FitDetail from "./pages/FitDetail";
 import UploadFit from "./pages/UploadFit";
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/profile-setup" element={<ProfileSetup />} />
+            <Route path="/home" element={<ProfileGuard><Home /></ProfileGuard>} />
             <Route path="/browse" element={<ProfileGuard><Browse /></ProfileGuard>} />
             <Route path="/fit/:id" element={<ProfileGuard><FitDetail /></ProfileGuard>} />
             <Route path="/upload" element={<ProfileGuard><UploadFit /></ProfileGuard>} />

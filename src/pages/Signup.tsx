@@ -29,7 +29,7 @@ export default function Signup() {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (user) navigate('/');
+    if (user) navigate('/home');
   }, [user, navigate]);
 
   const form = useForm<SignUpFormData>({
