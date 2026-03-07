@@ -1,7 +1,8 @@
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Layout } from '@/components/layout/Layout';
 import { ArrowRight, Sparkles, Shield, RefreshCw } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import heroImage from '@/assets/hero-fashion.jpg';
 import { CATEGORIES } from '@/types/database';
 import categoryDresses from '@/assets/category-dresses.jpg';
@@ -29,6 +30,12 @@ const categoryImages: Record<string, string> = {
 };
 
 export default function Index() {
+  const { user, loading } = useAuth();
+
+  if (!loading && user) {
+    return <Navigate to="/home" replace />;
+  }
+
   return (
     <Layout>
       {/* Hero Section */}
