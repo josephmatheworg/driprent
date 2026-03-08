@@ -36,7 +36,9 @@ export default function ProfileSetup() {
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
 
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<SetupFormData>({
+  const [geoLoading, setGeoLoading] = useState(false);
+
+  const { register, handleSubmit, formState: { errors }, reset, setValue: setFormValue } = useForm<SetupFormData>({
     resolver: zodResolver(setupSchema),
     defaultValues: {
       username: profile?.username || '',
