@@ -51,7 +51,7 @@ export default function Login() {
       });
     } else {
       toast({ title: 'Welcome back!' });
-      navigate('/home');
+      // Navigation handled by useEffect after profile loads
     }
   };
 
