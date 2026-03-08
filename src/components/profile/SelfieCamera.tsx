@@ -140,11 +140,18 @@ export function SelfieCamera({ onPhotoConfirmed, currentAvatarUrl, autoStart }: 
     startCamera();
   };
 
-  const confirmPhoto = () => {
-    if (capturedImage) {
-      setConfirmed(true);
-      onPhotoConfirmed(capturedImage);
+  const confirmPhoto = async () => {
+    if (!capturedImage) return;
+    setValidating(true);
+    setCameraError(null);
+    const result = await validateCapturedImage(capturedImage);
+    setValidating(false);
+    if (!result.valid) {
+      setCameraError(result.error || 'Photo validation failed. Please retake.');
+      return;
     }
+    setConfirmed(true);
+    onPhotoConfirmed(capturedImage);
   };
 
   const previewSrc = capturedImage || currentAvatarUrl || '';

@@ -227,5 +227,57 @@ export function useLivenessDetection(videoRef: React.RefObject<HTMLVideoElement>
     return () => cancelAnimationFrame(rafRef.current);
   }, [active, videoRef, step]);
 
-  return { step, faceCount, resetLiveness };
+  /** Validate a captured image: exactly 1 face, centered, large enough */
+  const validateCapturedImage = useCallback(async (dataUrl: string): Promise<{ valid: boolean; error?: string }> => {
+    try {
+      const vision = await FilesetResolver.forVisionTasks(
+        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
+      );
+      const landmarker = await FaceLandmarker.createFromOptions(vision, {
+        baseOptions: { modelAssetPath: MODEL_URL, delegate: 'GPU' },
+        runningMode: 'IMAGE',
+        numFaces: 2,
+        minFaceDetectionConfidence: 0.5,
+      });
+
+      const img = new Image();
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = reject;
+        img.src = dataUrl;
+      });
+
+      const result = landmarker.detect(img);
+      landmarker.close();
+
+      const count = result.faceLandmarks.length;
+      if (count === 0) return { valid: false, error: 'No face detected in the captured photo. Please retake your selfie.' };
+      if (count > 1) return { valid: false, error: 'Only one person allowed in the frame.' };
+
+      // Check face size and centering using landmarks
+      const lm = result.faceLandmarks[0];
+      const xs = lm.map(p => p.x);
+      const ys = lm.map(p => p.y);
+      const minX = Math.min(...xs), maxX = Math.max(...xs);
+      const minY = Math.min(...ys), maxY = Math.max(...ys);
+      const faceWidth = maxX - minX;
+      const faceHeight = maxY - minY;
+      const faceArea = faceWidth * faceHeight;
+
+      if (faceArea < 0.06) return { valid: false, error: 'Face is too small. Move closer to the camera.' };
+
+      const centerX = (minX + maxX) / 2;
+      const centerY = (minY + maxY) / 2;
+      if (Math.abs(centerX - 0.5) > 0.25 || Math.abs(centerY - 0.5) > 0.3) {
+        return { valid: false, error: 'Face is not centered. Position your face in the middle of the frame.' };
+      }
+
+      return { valid: true };
+    } catch {
+      // If validation itself fails, allow through to not block the user entirely
+      return { valid: true };
+    }
+  }, []);
+
+  return { step, faceCount, resetLiveness, validateCapturedImage };
 }
