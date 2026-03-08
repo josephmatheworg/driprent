@@ -58,8 +58,8 @@ export function FitCard({ fit }: FitCardProps) {
 
           <div className="mt-3 flex items-center justify-between">
             <div>
-              <span className="text-lg font-semibold text-foreground">${fit.daily_price}</span>
-              <span className="text-sm text-muted-foreground">/day</span>
+              <span className="text-lg font-semibold text-foreground">₹{fit.daily_price}</span>
+              <span className="text-sm text-muted-foreground"> / day</span>
             </div>
 
             {fit.owner && (

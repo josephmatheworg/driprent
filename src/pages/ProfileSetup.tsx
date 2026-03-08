@@ -65,6 +65,35 @@ export default function ProfileSetup() {
     }
   }, [profile, reset]);
 
+  const handleUseCurrentLocation = async () => {
+    if (!navigator.geolocation) {
+      toast({ variant: 'destructive', title: 'Geolocation not supported', description: 'Your browser does not support location detection.' });
+      return;
+    }
+    setGeoLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${position.coords.latitude}&lon=${position.coords.longitude}&format=json`);
+          const data = await res.json();
+          const city = data.address?.city || data.address?.town || data.address?.village || '';
+          const state = data.address?.state || '';
+          const country = data.address?.country || '';
+          const location = [city, state, country].filter(Boolean).join(', ');
+          setFormValue('location', location);
+        } catch {
+          toast({ variant: 'destructive', title: 'Location failed', description: 'Could not detect your location.' });
+        } finally {
+          setGeoLoading(false);
+        }
+      },
+      () => {
+        toast({ variant: 'destructive', title: 'Location denied', description: 'Please allow location access or enter manually.' });
+        setGeoLoading(false);
+      }
+    );
+  };
+
   const startCamera = useCallback(async () => {
     try {
       setCameraError(null);

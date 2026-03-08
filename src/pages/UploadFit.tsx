@@ -333,13 +333,13 @@ export default function UploadFit() {
             <h3 className="font-display text-2xl">PRICING</h3>
             <div className="mt-4 grid gap-6 md:grid-cols-2">
               <div>
-                <Label htmlFor="daily_price">Daily Rental Price ($)</Label>
+                <Label htmlFor="daily_price">Daily Rental Price (₹)</Label>
                 <Input
                   id="daily_price"
                   type="number"
-                  min="1"
+                  min="50"
                   step="1"
-                  placeholder="50"
+                  placeholder="500"
                   {...register('daily_price', { valueAsNumber: true })}
                   className="mt-1.5"
                 />
@@ -349,7 +349,7 @@ export default function UploadFit() {
               </div>
 
               <div>
-                <Label htmlFor="deposit_amount">Security Deposit ($)</Label>
+                <Label htmlFor="deposit_amount">Security Deposit (₹)</Label>
                 <Input
                   id="deposit_amount"
                   type="number"

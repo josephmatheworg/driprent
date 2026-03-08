@@ -298,7 +298,12 @@ export default function EditProfile() {
               </div>
               <div>
                 <Label htmlFor="edit-location">Location</Label>
-                <Input id="edit-location" placeholder="City, Country" {...register('location')} className="mt-1.5" />
+                <div className="mt-1.5 flex gap-2">
+                  <Input id="edit-location" placeholder="City, Country" {...register('location')} className="flex-1" />
+                  <Button type="button" variant="outline" size="icon" className="shrink-0" onClick={handleUseCurrentLocation} disabled={geoLoading}>
+                    {geoLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />}
+                  </Button>
+                </div>
                 {errors.location && <p className="mt-1 text-sm text-destructive">{errors.location.message}</p>}
               </div>
             </div>
