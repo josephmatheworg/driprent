@@ -5,6 +5,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -42,13 +52,14 @@ function clearDraft() {
 }
 
 export default function ProfileSetup() {
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile, refreshProfile, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const [step, setStep] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
   const [confirmedPhoto, setConfirmedPhoto] = useState<string | null>(null);
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
 
   // Step 2 fields
   const [phone, setPhone] = useState('');
@@ -130,6 +141,22 @@ export default function ProfileSetup() {
 
   const goBack = () => setStep((s) => Math.max(s - 1, 1));
 
+  const hasPartialProgress = !!(confirmedPhoto || phone.trim() || locationCity.trim() || bio.trim());
+
+  const handleBackToSignup = async () => {
+    if (hasPartialProgress) {
+      setShowLeaveDialog(true);
+      return;
+    }
+    await performLeave();
+  };
+
+  const performLeave = async () => {
+    clearDraft();
+    await signOut();
+    navigate('/signup');
+  };
+
   const handleComplete = async () => {
     if (!profile || !user || !confirmedPhoto) return;
     setIsSaving(true);
@@ -199,6 +226,14 @@ export default function ProfileSetup() {
       <div className="container mx-auto flex min-h-screen items-center justify-center px-4 py-12">
         <div className="w-full max-w-lg">
           <div className="glass-card rounded-2xl p-6 shadow-soft-lg sm:p-8">
+            {/* Back to Sign Up */}
+            <button
+              type="button"
+              onClick={handleBackToSignup}
+              className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors min-h-[44px]"
+            >
+              <ArrowLeft className="h-4 w-4" /> Back to Sign Up
+            </button>
             {/* Progress indicator */}
             <div className="mb-6 space-y-2">
               <p className="text-sm font-medium text-muted-foreground text-center">
@@ -323,6 +358,21 @@ export default function ProfileSetup() {
           </div>
         </div>
       </div>
+      {/* Leave confirmation dialog */}
+      <AlertDialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave profile setup?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to go back? Your profile setup is not finished.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Stay</AlertDialogCancel>
+            <AlertDialogAction onClick={performLeave}>Go Back</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </BackgroundDecor>
   );
 }
