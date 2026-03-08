@@ -18,6 +18,7 @@ export interface Profile {
   gender: string | null;
   rating: number;
   total_reviews: number;
+  profile_completed: boolean;
   created_at: string;
   updated_at: string;
 }

@@ -181,7 +181,8 @@ export default function ProfileSetup() {
           location_state: locationState.trim(),
           location_country: locationCountry.trim(),
           avatar_url: `${urlData.publicUrl}?t=${Date.now()}`,
-        })
+          profile_completed: true,
+        } as any)
         .eq('id', profile.id);
 
       if (error) throw error;

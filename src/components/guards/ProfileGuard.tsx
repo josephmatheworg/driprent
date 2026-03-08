@@ -20,14 +20,13 @@ export function ProfileGuard({ children }: ProfileGuardProps) {
     return <Navigate to="/login" replace />;
   }
 
-  // Check if profile is incomplete (missing required onboarding fields)
-  const isProfileComplete = profile &&
-    profile.bio &&
-    profile.phone &&
-    (profile.location || profile.location_city) &&
-    profile.avatar_url;
+  // Only redirect to setup if profile_completed flag is false
+  if (profile && !profile.profile_completed) {
+    return <Navigate to="/profile-setup" replace />;
+  }
 
-  if (!isProfileComplete) {
+  // Profile not yet loaded — wait
+  if (!profile) {
     return <Navigate to="/profile-setup" replace />;
   }
 

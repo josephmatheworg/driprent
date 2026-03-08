@@ -21,13 +21,15 @@ type SignInFormData = z.infer<typeof signInSchema>;
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn, user } = useAuth();
+  const { signIn, user, profile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    if (user) navigate('/home');
-  }, [user, navigate]);
+    if (user && profile) {
+      navigate(profile.profile_completed ? '/home' : '/profile-setup');
+    }
+  }, [user, profile, navigate]);
 
   const form = useForm<SignInFormData>({
     resolver: zodResolver(signInSchema),
@@ -49,7 +51,7 @@ export default function Login() {
       });
     } else {
       toast({ title: 'Welcome back!' });
-      navigate('/home');
+      // Navigation handled by useEffect after profile loads
     }
   };
 
