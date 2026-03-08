@@ -17,6 +17,7 @@ import UploadFit from "./pages/UploadFit";
 import MyFits from "./pages/MyFits";
 import Rentals from "./pages/Rentals";
 import Profile from "./pages/Profile";
+import EditProfile from "./pages/EditProfile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ const App = () => (
             <Route path="/my-fits" element={<ProfileGuard><MyFits /></ProfileGuard>} />
             <Route path="/rentals" element={<ProfileGuard><Rentals /></ProfileGuard>} />
             <Route path="/profile" element={<ProfileGuard><Profile /></ProfileGuard>} />
+            <Route path="/edit-profile" element={<ProfileGuard><EditProfile /></ProfileGuard>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
