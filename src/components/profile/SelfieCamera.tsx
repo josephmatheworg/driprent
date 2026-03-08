@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Camera, RotateCcw, Check, AlertTriangle, Loader2 } from 'lucide-react';
-import { useFaceDetection, type FaceStatus } from '@/hooks/useFaceDetection';
+import { Camera, RotateCcw, Check, AlertTriangle, Loader2, Eye, MoveHorizontal, MoveRight } from 'lucide-react';
+import { useLivenessDetection, type LivenessStep } from '@/hooks/useLivenessDetection';
 
 interface SelfieCameraProps {
   onPhotoConfirmed: (dataUrl: string) => void;
@@ -9,33 +9,58 @@ interface SelfieCameraProps {
   autoStart?: boolean;
 }
 
-function StatusBadge({ status }: { status: FaceStatus }) {
-  if (status === 'loading')
-    return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
-        <Loader2 className="h-3 w-3 animate-spin" /> Loading face detection…
-      </span>
-    );
-  if (status === 'one-face')
-    return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-400">
-        <Check className="h-3 w-3" /> Face Detected ✓
-      </span>
-    );
-  if (status === 'multiple-faces')
-    return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
-        <AlertTriangle className="h-3 w-3" /> Only one person should be in the frame
-      </span>
-    );
-  if (status === 'no-face')
-    return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-destructive/10 px-3 py-1 text-xs font-medium text-destructive">
-        <AlertTriangle className="h-3 w-3" /> No face detected — position your face in the frame
-      </span>
-    );
-  // error status – allow capture without detection
-  return null;
+const STEP_CONFIG: Record<LivenessStep, { label: string; instruction: string; icon: React.ReactNode; color: string; done: boolean }> = {
+  loading: { label: 'Initializing…', instruction: 'Loading face detection model…', icon: <Loader2 className="h-3.5 w-3.5 animate-spin" />, color: 'text-muted-foreground bg-muted', done: false },
+  'no-face': { label: 'No Face', instruction: 'Position your face inside the circle', icon: <AlertTriangle className="h-3.5 w-3.5" />, color: 'text-destructive bg-destructive/10', done: false },
+  'multiple-faces': { label: 'Multiple Faces', instruction: 'Only one person should be in the frame', icon: <AlertTriangle className="h-3.5 w-3.5" />, color: 'text-yellow-700 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-900/30', done: false },
+  'face-detected': { label: 'Face Detected', instruction: 'Great! Hold still…', icon: <Check className="h-3.5 w-3.5" />, color: 'text-green-700 bg-green-100 dark:text-green-400 dark:bg-green-900/30', done: false },
+  blink: { label: 'Blink Check', instruction: 'Please blink your eyes to verify you are a real person', icon: <Eye className="h-3.5 w-3.5" />, color: 'text-blue-700 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30', done: false },
+  'turn-left': { label: 'Turn Left', instruction: 'Turn your head slightly to the left', icon: <MoveHorizontal className="h-3.5 w-3.5" />, color: 'text-blue-700 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30', done: false },
+  'turn-right': { label: 'Turn Right', instruction: 'Turn your head slightly to the right', icon: <MoveRight className="h-3.5 w-3.5" />, color: 'text-blue-700 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30', done: false },
+  'move-closer': { label: 'Move Closer', instruction: 'Move slightly closer to the camera', icon: <Camera className="h-3.5 w-3.5" />, color: 'text-blue-700 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30', done: false },
+  verified: { label: 'Verified', instruction: 'Verification successful! You can now capture your selfie.', icon: <Check className="h-3.5 w-3.5" />, color: 'text-green-700 bg-green-100 dark:text-green-400 dark:bg-green-900/30', done: true },
+  error: { label: 'Detection Error', instruction: 'Face detection unavailable. You may capture your selfie.', icon: <AlertTriangle className="h-3.5 w-3.5" />, color: 'text-muted-foreground bg-muted', done: true },
+};
+
+const ORDERED_STEPS: LivenessStep[] = ['face-detected', 'blink', 'turn-left', 'turn-right', 'move-closer'];
+
+function stepIndex(step: LivenessStep): number {
+  const idx = ORDERED_STEPS.indexOf(step);
+  if (step === 'verified') return ORDERED_STEPS.length;
+  return idx >= 0 ? idx : -1;
+}
+
+function ProgressChecklist({ currentStep }: { currentStep: LivenessStep }) {
+  const current = stepIndex(currentStep);
+  const items = [
+    { label: 'Face Detected', idx: 0 },
+    { label: 'Blink Verified', idx: 1 },
+    { label: 'Head Movement', idx: 2 }, // covers turn-left (2) and turn-right (3)
+    { label: 'Depth Check', idx: 4 },
+  ];
+
+  return (
+    <div className="flex flex-col gap-1 text-xs w-full max-w-[220px]">
+      {items.map((item) => {
+        // Head movement passes when turn-right is done (idx 3 complete → current > 3)
+        const passIdx = item.label === 'Head Movement' ? 3 : item.idx;
+        const done = current > passIdx;
+        const active = !done && current >= item.idx && current <= (item.label === 'Head Movement' ? 3 : item.idx);
+        return (
+          <div key={item.label} className={`flex items-center gap-2 rounded px-2 py-1 transition-colors ${done ? 'text-green-700 dark:text-green-400' : active ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+            {done ? (
+              <Check className="h-3.5 w-3.5 shrink-0" />
+            ) : active ? (
+              <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
+            ) : (
+              <div className="h-3.5 w-3.5 shrink-0 rounded-full border border-muted-foreground/40" />
+            )}
+            <span>{item.label}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 export function SelfieCamera({ onPhotoConfirmed, currentAvatarUrl, autoStart }: SelfieCameraProps) {
@@ -46,18 +71,19 @@ export function SelfieCamera({ onPhotoConfirmed, currentAvatarUrl, autoStart }: 
   const [confirmed, setConfirmed] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
-  const [validating, setValidating] = useState(false);
 
-  const { status, detectInImage } = useFaceDetection(
+  const { step, resetLiveness } = useLivenessDetection(
     videoRef as React.RefObject<HTMLVideoElement>,
     cameraActive
   );
 
-  const canCapture = status === 'one-face' || status === 'error';
+  const canCapture = step === 'verified' || step === 'error';
+  const config = STEP_CONFIG[step];
 
   const startCamera = useCallback(async () => {
     try {
       setCameraError(null);
+      resetLiveness();
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
       });
@@ -69,7 +95,7 @@ export function SelfieCamera({ onPhotoConfirmed, currentAvatarUrl, autoStart }: 
     } catch {
       setCameraError('Could not access camera. Please allow camera permissions in your browser settings.');
     }
-  }, []);
+  }, [resetLiveness]);
 
   const stopCamera = useCallback(() => {
     if (stream) {
@@ -109,27 +135,15 @@ export function SelfieCamera({ onPhotoConfirmed, currentAvatarUrl, autoStart }: 
   const retakePhoto = () => {
     setCapturedImage(null);
     setConfirmed(false);
+    setCameraError(null);
     startCamera();
   };
 
-  const confirmPhoto = async () => {
-    if (!capturedImage) return;
-    setValidating(true);
-    const count = await detectInImage(capturedImage);
-    setValidating(false);
-
-    if (count === 0) {
-      setCameraError('No face detected in the captured photo. Please retake your selfie.');
-      return;
+  const confirmPhoto = () => {
+    if (capturedImage) {
+      setConfirmed(true);
+      onPhotoConfirmed(capturedImage);
     }
-    if (count > 1) {
-      setCameraError('Multiple faces detected. Only one person should be in the photo.');
-      return;
-    }
-    // count === 1 or -1 (error, allow through)
-    setCameraError(null);
-    setConfirmed(true);
-    onPhotoConfirmed(capturedImage);
   };
 
   const previewSrc = capturedImage || currentAvatarUrl || '';
@@ -138,7 +152,7 @@ export function SelfieCamera({ onPhotoConfirmed, currentAvatarUrl, autoStart }: 
     <div className="flex flex-col items-center gap-3">
       {cameraActive ? (
         <>
-          {/* Camera preview with circular guide overlay */}
+          {/* Camera preview with guide overlay */}
           <div className="relative">
             <video
               ref={videoRef}
@@ -147,15 +161,16 @@ export function SelfieCamera({ onPhotoConfirmed, currentAvatarUrl, autoStart }: 
               muted
               className="h-40 w-40 rounded-full object-cover border-2 border-muted sm:h-48 sm:w-48"
             />
-            {/* Guide ring */}
-            <div className="pointer-events-none absolute inset-0 rounded-full border-4 border-dashed border-primary/40" />
+            <div className={`pointer-events-none absolute inset-0 rounded-full border-4 border-dashed transition-colors ${canCapture ? 'border-green-500' : 'border-primary/40'}`} />
           </div>
 
-          <p className="text-xs text-muted-foreground text-center max-w-[200px]">
-            Align your face inside the circle
-          </p>
+          {/* Status badge */}
+          <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${config.color}`}>
+            {config.icon} {config.instruction}
+          </span>
 
-          <StatusBadge status={status} />
+          {/* Progress checklist */}
+          <ProgressChecklist currentStep={step} />
 
           <Button
             type="button"
@@ -190,12 +205,8 @@ export function SelfieCamera({ onPhotoConfirmed, currentAvatarUrl, autoStart }: 
               <Button type="button" variant="outline" size="sm" onClick={retakePhoto}>
                 <RotateCcw className="mr-2 h-4 w-4" /> Retake Selfie
               </Button>
-              <Button type="button" size="sm" onClick={confirmPhoto} disabled={validating}>
-                {validating ? (
-                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verifying…</>
-                ) : (
-                  <><Check className="mr-2 h-4 w-4" /> Confirm Photo</>
-                )}
+              <Button type="button" size="sm" onClick={confirmPhoto}>
+                <Check className="mr-2 h-4 w-4" /> Confirm Photo
               </Button>
             </div>
           )}
