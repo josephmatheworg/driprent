@@ -304,10 +304,27 @@ export default function ProfileSetup() {
                 <canvas ref={canvasRef} className="hidden" />
               </div>
 
-              <div>
-                <Label htmlFor="setup-username">Username</Label>
-                <Input id="setup-username" {...register('username')} className="mt-1.5" />
-                {errors.username && <p className="mt-1 text-sm text-destructive">{errors.username.message}</p>}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <Label htmlFor="setup-username">Username</Label>
+                  <Input id="setup-username" {...register('username')} className="mt-1.5" />
+                  {errors.username && <p className="mt-1 text-sm text-destructive">{errors.username.message}</p>}
+                </div>
+
+                <div>
+                  <Label htmlFor="setup-gender">Gender</Label>
+                  <Select onValueChange={(v) => setFormValue('gender', v)} defaultValue="">
+                    <SelectTrigger className="mt-1.5">
+                      <SelectValue placeholder="Select gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {GENDER_OPTIONS.map((g) => (
+                        <SelectItem key={g} value={g}>{g}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.gender && <p className="mt-1 text-sm text-destructive">{errors.gender.message}</p>}
+                </div>
               </div>
 
               <div>
