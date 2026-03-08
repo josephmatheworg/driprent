@@ -234,8 +234,8 @@ export default function FitDetail() {
 
             <div className="mt-4 flex items-center gap-4">
               <div>
-                <span className="text-3xl font-bold text-foreground">${fit.daily_price}</span>
-                <span className="text-muted-foreground">/day</span>
+                <span className="text-3xl font-bold text-foreground">₹{fit.daily_price}</span>
+                <span className="text-muted-foreground"> / day</span>
               </div>
               {fit.rating > 0 && (
                 <div className="flex items-center gap-1">
