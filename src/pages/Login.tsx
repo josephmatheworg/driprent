@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { BackgroundDecor } from '@/components/layout/BackgroundDecor';
 
 const signInSchema = z.object({
   email: z.string().trim().email('Please enter a valid email'),
