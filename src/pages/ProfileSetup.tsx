@@ -141,6 +141,22 @@ export default function ProfileSetup() {
 
   const goBack = () => setStep((s) => Math.max(s - 1, 1));
 
+  const hasPartialProgress = !!(confirmedPhoto || phone.trim() || locationCity.trim() || bio.trim());
+
+  const handleBackToSignup = async () => {
+    if (hasPartialProgress) {
+      setShowLeaveDialog(true);
+      return;
+    }
+    await performLeave();
+  };
+
+  const performLeave = async () => {
+    clearDraft();
+    await signOut();
+    navigate('/signup');
+  };
+
   const handleComplete = async () => {
     if (!profile || !user || !confirmedPhoto) return;
     setIsSaving(true);
