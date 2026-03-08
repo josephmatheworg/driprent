@@ -358,7 +358,7 @@ export function useLivenessDetection(videoRef: React.RefObject<HTMLVideoElement>
     }
   }, []);
 
-  return { step, faceCount, resetLiveness, validateCapturedImage };
+  return { step, faceCount, faceLocked, resetLiveness, validateCapturedImage };
 }
 
 /**
