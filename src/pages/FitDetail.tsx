@@ -10,9 +10,8 @@ import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { getOrCreateConversation } from '@/hooks/useConversations';
 import type { Fit } from '@/types/database';
-import { Star, ChevronLeft, ChevronRight, Shield, MapPin, Package, Calendar as CalendarIcon, MessageSquare } from 'lucide-react';
+import { Star, ChevronLeft, ChevronRight, Shield, MapPin } from 'lucide-react';
 import { format, differenceInDays, addDays } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 
