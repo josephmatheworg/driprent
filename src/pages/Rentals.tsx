@@ -120,7 +120,7 @@ export default function Rentals() {
                 {format(new Date(rental.start_date), 'MMM d')} - {format(new Date(rental.end_date), 'MMM d, yyyy')}
               </div>
               <div className="font-medium">
-                ${rental.total_amount.toFixed(2)} total
+                ₹{rental.total_amount.toFixed(2)} total
               </div>
             </div>
 
