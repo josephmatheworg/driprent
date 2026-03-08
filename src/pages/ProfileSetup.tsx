@@ -7,13 +7,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Camera, RotateCcw, Check, MapPin, Loader2 } from 'lucide-react';
 
+const GENDER_OPTIONS = ['Male', 'Female', 'Other', 'Prefer not to say'] as const;
+
 const setupSchema = z.object({
   username: z.string().trim().min(3, 'Username must be at least 3 characters').max(30, 'Username must be less than 30 characters').regex(/^[a-zA-Z0-9_]+$/, 'Only letters, numbers, and underscores allowed'),
+  gender: z.string().min(1, 'Gender is required'),
   bio: z.string().trim().min(1, 'Bio is required').max(200, 'Bio must be less than 200 characters'),
   phone: z.string().trim().min(1, 'Phone number is required').regex(/^\+?[\d]{10,15}$/, 'Phone must be 10-15 digits, only numbers and + allowed'),
   location: z.string().trim().min(1, 'Location is required').max(100),
@@ -42,6 +46,7 @@ export default function ProfileSetup() {
     resolver: zodResolver(setupSchema),
     defaultValues: {
       username: profile?.username || '',
+      gender: '',
       bio: '',
       phone: '',
       location: '',
@@ -58,6 +63,7 @@ export default function ProfileSetup() {
     if (profile) {
       reset({
         username: profile.username || '',
+        gender: profile.gender || '',
         bio: profile.bio || '',
         phone: profile.phone || '',
         location: profile.location || '',
@@ -198,6 +204,7 @@ export default function ProfileSetup() {
         .from('profiles')
         .update({
           username: data.username,
+          gender: data.gender,
           bio: data.bio,
           phone: data.phone,
           location: data.location,
@@ -297,10 +304,27 @@ export default function ProfileSetup() {
                 <canvas ref={canvasRef} className="hidden" />
               </div>
 
-              <div>
-                <Label htmlFor="setup-username">Username</Label>
-                <Input id="setup-username" {...register('username')} className="mt-1.5" />
-                {errors.username && <p className="mt-1 text-sm text-destructive">{errors.username.message}</p>}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <Label htmlFor="setup-username">Username</Label>
+                  <Input id="setup-username" {...register('username')} className="mt-1.5" />
+                  {errors.username && <p className="mt-1 text-sm text-destructive">{errors.username.message}</p>}
+                </div>
+
+                <div>
+                  <Label htmlFor="setup-gender">Gender</Label>
+                  <Select onValueChange={(v) => setFormValue('gender', v)} defaultValue="">
+                    <SelectTrigger className="mt-1.5">
+                      <SelectValue placeholder="Select gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {GENDER_OPTIONS.map((g) => (
+                        <SelectItem key={g} value={g}>{g}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.gender && <p className="mt-1 text-sm text-destructive">{errors.gender.message}</p>}
+                </div>
               </div>
 
               <div>

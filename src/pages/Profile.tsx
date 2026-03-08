@@ -8,14 +8,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Camera, MapPin, Star, RotateCcw, Check, Loader2 } from 'lucide-react';
 
+const GENDER_OPTIONS = ['Male', 'Female', 'Other', 'Prefer not to say'] as const;
+
 const profileSchema = z.object({
   username: z.string().trim().min(3, 'Username must be at least 3 characters').max(30, 'Username must be less than 30 characters').regex(/^[a-zA-Z0-9_]+$/, 'Only letters, numbers, and underscores allowed'),
+  gender: z.string().optional(),
   bio: z.string().trim().max(200, 'Bio must be less than 200 characters').optional(),
   phone: z.string().trim().regex(/^(\+?[\d]{10,15})?$/, 'Phone must be 10-15 digits, only numbers and + allowed').optional(),
   location: z.string().trim().min(1, 'Location is required').max(100, 'Location must be less than 100 characters'),
@@ -53,6 +57,7 @@ export default function Profile() {
     if (profile) {
       reset({
         username: profile.username,
+        gender: profile.gender || '',
         bio: profile.bio || '',
         phone: profile.phone || '',
         location: profile.location || '',
@@ -172,6 +177,7 @@ export default function Profile() {
     if (profile) {
       reset({
         username: profile.username,
+        gender: profile.gender || '',
         bio: profile.bio || '',
         phone: profile.phone || '',
         location: profile.location || '',
@@ -206,6 +212,7 @@ export default function Profile() {
         .from('profiles')
         .update({
           username: data.username,
+          gender: data.gender || null,
           bio: data.bio || null,
           phone: data.phone || null,
           location: data.location || null,
@@ -330,6 +337,26 @@ export default function Profile() {
                 {errors.username && <p className="mt-1 text-sm text-destructive">{errors.username.message}</p>}
               </div>
 
+              <div>
+                <Label htmlFor="gender">Gender</Label>
+                {isEditing ? (
+                  <Select onValueChange={(v) => setFormValue('gender', v)} defaultValue={profile.gender || ''}>
+                    <SelectTrigger className="mt-1.5">
+                      <SelectValue placeholder="Select gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {GENDER_OPTIONS.map((g) => (
+                        <SelectItem key={g} value={g}>{g}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input value={profile.gender || 'Not set'} disabled className="mt-1.5" />
+                )}
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <Label htmlFor="phone">Phone</Label>
                 <Input id="phone" type="tel" placeholder="+919876543210" {...register('phone')} disabled={!isEditing} className="mt-1.5" />
