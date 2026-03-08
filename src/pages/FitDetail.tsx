@@ -248,7 +248,7 @@ export default function FitDetail() {
 
             {fit.deposit_amount > 0 && (
               <p className="mt-2 text-sm text-muted-foreground">
-                + ${fit.deposit_amount} refundable deposit
+                + ₹{fit.deposit_amount} refundable deposit
               </p>
             )}
 
