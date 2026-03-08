@@ -77,7 +77,7 @@ export function SelfieCamera({ onPhotoConfirmed, currentAvatarUrl, autoStart }: 
     cameraActive
   );
 
-  const canCapture = step === 'verified' || step === 'error';
+  const canCapture = step === 'verified';
   const config = STEP_CONFIG[step];
 
   const startCamera = useCallback(async () => {
