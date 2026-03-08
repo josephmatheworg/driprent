@@ -36,7 +36,7 @@ export default function HowItWorks() {
       {/* Header */}
       <section className="bg-card py-16 text-center">
         <div className="container mx-auto px-4">
-          <h1 className="font-display text-5xl text-foreground md:text-6xl">HOW DRIPRENT WORKS</h1>
+          <h1 className="font-display text-4xl text-foreground sm:text-5xl md:text-6xl">HOW DRIPRENT WORKS</h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
             DripRent connects renters and outfit owners. Payments and exchanges are handled directly between users.
           </p>

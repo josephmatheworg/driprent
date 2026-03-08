@@ -27,7 +27,7 @@ export default function Messages() {
 
   return (
     <Layout hideFooter>
-      <div className="container mx-auto flex h-[calc(100vh-4rem)] max-w-6xl overflow-hidden">
+      <div className="container mx-auto flex h-[calc(100dvh-4rem)] max-w-6xl overflow-hidden">
         {/* Conversation List */}
         {showList && (
           <div className={`flex flex-col border-r border-border ${isMobile ? 'w-full' : 'w-80 shrink-0'}`}>

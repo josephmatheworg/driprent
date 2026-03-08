@@ -154,7 +154,7 @@ export default function Profile() {
   return (
     <Layout>
       <div className="container mx-auto max-w-2xl px-4 py-8">
-        <h1 className="font-display text-5xl text-foreground">PROFILE</h1>
+        <h1 className="font-display text-4xl text-foreground sm:text-5xl">PROFILE</h1>
 
         {/* Avatar Section */}
         <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:items-center sm:gap-6">

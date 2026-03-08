@@ -203,7 +203,7 @@ export default function FitDetail() {
               {fit.condition && <Badge variant="outline">{fit.condition}</Badge>}
             </div>
 
-            <h1 className="font-display text-4xl text-foreground lg:text-5xl">{fit.title}</h1>
+            <h1 className="font-display text-3xl text-foreground sm:text-4xl lg:text-5xl">{fit.title}</h1>
 
             <div className="mt-4 flex items-center gap-4">
               <div>

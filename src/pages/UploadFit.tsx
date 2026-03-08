@@ -185,7 +185,7 @@ export default function UploadFit() {
   return (
     <Layout>
       <div className="container mx-auto max-w-3xl px-4 py-8">
-        <h1 className="font-display text-5xl text-foreground">LIST YOUR FIT</h1>
+        <h1 className="font-display text-4xl text-foreground sm:text-5xl">LIST YOUR FIT</h1>
         <p className="mt-2 text-muted-foreground">
           Share your style with the community and earn money from your wardrobe.
         </p>

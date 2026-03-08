@@ -131,20 +131,20 @@ export function ChatWindow({ conversationId, otherUser }: ChatWindowProps) {
       </ScrollArea>
 
       {/* Input */}
-      <div className="border-t border-border p-3">
+      <div className="border-t border-border p-3 pb-[env(safe-area-inset-bottom,0.75rem)]">
         <div className="flex items-center gap-2">
           <Input
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Type a message…"
-            className="flex-1"
+            className="flex-1 min-h-[44px]"
           />
           <Button
             size="icon"
             onClick={handleSend}
             disabled={!text.trim()}
-            className="shrink-0"
+            className="shrink-0 h-11 w-11"
           >
             <Send className="h-4 w-4" />
           </Button>
