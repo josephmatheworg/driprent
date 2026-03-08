@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Camera, RotateCcw } from 'lucide-react';
+import { Camera, RotateCcw, Upload, ImagePlus } from 'lucide-react';
 
 const setupSchema = z.object({
   username: z.string().trim().min(3, 'Username must be at least 3 characters').max(20),
@@ -30,10 +30,12 @@ export default function ProfileSetup() {
   // Camera state
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
   const { register, handleSubmit, formState: { errors }, reset } = useForm<SetupFormData>({
     resolver: zodResolver(setupSchema),
@@ -47,7 +49,7 @@ export default function ProfileSetup() {
 
   useEffect(() => {
     if (!user) {
-      navigate('/auth');
+      navigate('/login');
     }
   }, [user, navigate]);
 
@@ -75,7 +77,7 @@ export default function ProfileSetup() {
       }
     } catch (err) {
       console.error('Camera access error:', err);
-      setCameraError('Could not access camera. Please allow camera permissions.');
+      setCameraError('Could not access camera. Please allow camera permissions or upload a photo instead.');
     }
   }, []);
 
@@ -106,13 +108,38 @@ export default function ProfileSetup() {
       ctx.drawImage(video, 0, 0);
       const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
       setCapturedImage(dataUrl);
+      setUploadedFile(null);
       stopCamera();
     }
   };
 
   const retakePhoto = () => {
     setCapturedImage(null);
-    startCamera();
+    setUploadedFile(null);
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({ variant: 'destructive', title: 'Invalid file', description: 'Please upload an image file.' });
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ variant: 'destructive', title: 'File too large', description: 'Please upload an image under 5MB.' });
+      return;
+    }
+
+    setUploadedFile(file);
+    stopCamera();
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setCapturedImage(ev.target?.result as string);
+    };
+    reader.readAsDataURL(file);
   };
 
   const dataURLtoBlob = (dataurl: string): Blob => {
@@ -126,19 +153,19 @@ export default function ProfileSetup() {
 
   const onSubmit = async (data: SetupFormData) => {
     if (!capturedImage) {
-      toast({ variant: 'destructive', title: 'Photo required', description: 'Please take a profile photo using your camera.' });
+      toast({ variant: 'destructive', title: 'Photo required', description: 'Please upload or capture a profile photo.' });
       return;
     }
     if (!profile || !user) return;
 
     setIsSaving(true);
     try {
-      // Upload avatar
-      const blob = dataURLtoBlob(capturedImage);
-      const fileName = `${user.id}/avatar.jpg`;
+      const blob = uploadedFile || dataURLtoBlob(capturedImage);
+      const ext = uploadedFile ? uploadedFile.name.split('.').pop() || 'jpg' : 'jpg';
+      const fileName = `${user.id}/avatar.${ext}`;
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(fileName, blob, { upsert: true, contentType: 'image/jpeg' });
+        .upload(fileName, blob, { upsert: true, contentType: blob.type || 'image/jpeg' });
       if (uploadError) throw uploadError;
 
       const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
@@ -173,27 +200,27 @@ export default function ProfileSetup() {
     <div className="min-h-screen bg-hero-gradient">
       <div className="container mx-auto flex min-h-screen items-center justify-center px-4 py-12">
         <div className="w-full max-w-lg">
-          <div className="rounded-2xl border border-border bg-card p-8 shadow-card">
+          <div className="rounded-2xl border border-border bg-card p-6 shadow-card sm:p-8">
             <div className="mb-8 text-center">
-              <h1 className="font-display text-4xl text-foreground">SET UP YOUR PROFILE</h1>
-              <p className="mt-2 text-muted-foreground">Complete your profile to access the platform</p>
+              <h1 className="font-display text-3xl text-foreground sm:text-4xl">SET UP YOUR PROFILE</h1>
+              <p className="mt-2 text-sm text-muted-foreground sm:text-base">Complete your profile to access the platform</p>
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-              {/* Camera Section */}
+              {/* Photo Section */}
               <div>
-                <Label>Profile Picture (Camera Required)</Label>
+                <Label>Profile Picture</Label>
                 <div className="mt-2 flex flex-col items-center gap-3">
                   {capturedImage ? (
                     <>
                       <img
                         src={capturedImage}
-                        alt="Captured profile"
-                        className="h-40 w-40 rounded-full object-cover border-2 border-primary"
+                        alt="Profile preview"
+                        className="h-32 w-32 rounded-full object-cover border-2 border-primary sm:h-40 sm:w-40"
                       />
                       <Button type="button" variant="outline" size="sm" onClick={retakePhoto}>
                         <RotateCcw className="mr-2 h-4 w-4" />
-                        Retake
+                        Change Photo
                       </Button>
                     </>
                   ) : cameraActive ? (
@@ -203,23 +230,36 @@ export default function ProfileSetup() {
                         autoPlay
                         playsInline
                         muted
-                        className="h-40 w-40 rounded-full object-cover border-2 border-muted"
+                        className="h-32 w-32 rounded-full object-cover border-2 border-muted sm:h-40 sm:w-40"
                       />
-                      <Button type="button" variant="terracotta" size="sm" onClick={capturePhoto}>
+                      <Button type="button" variant="default" size="sm" onClick={capturePhoto}>
                         <Camera className="mr-2 h-4 w-4" />
                         Capture
                       </Button>
                     </>
                   ) : (
                     <>
-                      <div className="flex h-40 w-40 items-center justify-center rounded-full bg-muted">
-                        <Camera className="h-10 w-10 text-muted-foreground" />
+                      <div className="flex h-32 w-32 items-center justify-center rounded-full bg-muted sm:h-40 sm:w-40">
+                        <ImagePlus className="h-10 w-10 text-muted-foreground" />
                       </div>
-                      {cameraError && <p className="text-sm text-destructive">{cameraError}</p>}
-                      <Button type="button" variant="outline" size="sm" onClick={startCamera}>
-                        <Camera className="mr-2 h-4 w-4" />
-                        Open Camera
-                      </Button>
+                      {cameraError && <p className="text-sm text-destructive text-center">{cameraError}</p>}
+                      <div className="flex flex-col gap-2 sm:flex-row">
+                        <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                          <Upload className="mr-2 h-4 w-4" />
+                          Upload Photo
+                        </Button>
+                        <Button type="button" variant="outline" size="sm" onClick={startCamera}>
+                          <Camera className="mr-2 h-4 w-4" />
+                          Take Photo
+                        </Button>
+                      </div>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileUpload}
+                        className="hidden"
+                      />
                     </>
                   )}
                 </div>
