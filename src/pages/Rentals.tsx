@@ -100,6 +100,7 @@ export default function Rentals() {
   const myRentals = rentals.filter(r => r.renter_id === profile?.id);
   const myListings = rentals.filter(r => r.owner_id === profile?.id);
 
+  // Messaging only available after acceptance (confirmed or active)
   const canMessage = (rental: Rental) =>
     rental.status === 'confirmed' || rental.status === 'active';
 
