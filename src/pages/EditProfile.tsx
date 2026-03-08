@@ -15,10 +15,10 @@ import { useToast } from '@/hooks/use-toast';
 import { Camera, Upload, RotateCcw, ImagePlus } from 'lucide-react';
 
 const editSchema = z.object({
-  username: z.string().trim().min(3, 'Username must be at least 3 characters').max(20),
-  bio: z.string().trim().max(300, 'Bio must be less than 300 characters').optional(),
-  phone: z.string().trim().max(20).regex(/^(\+?[\d\s\-()]*)?$/, 'Invalid phone number').optional(),
-  location: z.string().trim().max(100).optional(),
+  username: z.string().trim().min(3, 'Username must be at least 3 characters').max(30, 'Username must be less than 30 characters').regex(/^[a-zA-Z0-9_]+$/, 'Only letters, numbers, and underscores allowed'),
+  bio: z.string().trim().max(200, 'Bio must be less than 200 characters').optional(),
+  phone: z.string().trim().regex(/^(\+?[\d]{10,15})?$/, 'Phone must be 10-15 digits, only numbers and + allowed').optional(),
+  location: z.string().trim().min(1, 'Location is required').max(100),
 });
 
 type EditFormData = z.infer<typeof editSchema>;
