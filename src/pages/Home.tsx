@@ -61,7 +61,7 @@ function HomeFitCard({ fit }: { fit: any }) {
             loading="lazy"
           />
           <div className="absolute bottom-2 right-2 rounded-full bg-background/90 px-3 py-1 text-sm font-semibold text-foreground backdrop-blur-sm">
-            ${fit.daily_price}/day
+            ₹{fit.daily_price} / day
           </div>
         </div>
       </Link>
