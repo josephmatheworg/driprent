@@ -212,6 +212,7 @@ export default function Profile() {
         .from('profiles')
         .update({
           username: data.username,
+          gender: data.gender || null,
           bio: data.bio || null,
           phone: data.phone || null,
           location: data.location || null,
