@@ -1,15 +1,17 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, Handshake } from 'lucide-react';
+import { Send } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMessages } from '@/hooks/useMessages';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { ConfirmDealPanel } from '@/components/chat/ConfirmDealPanel';
+import { ChatSettingsPanel } from '@/components/chat/ChatSettingsPanel';
+import { DealSummaryCard } from '@/components/chat/DealSummaryCard';
 
 interface ChatWindowProps {
   conversationId: string;
@@ -21,35 +23,35 @@ export function ChatWindow({ conversationId, otherUser }: ChatWindowProps) {
   const { messages, loading, sendMessage } = useMessages(conversationId);
   const [text, setText] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
-  const [acceptedRental, setAcceptedRental] = useState<any>(null);
+  const [rental, setRental] = useState<any>(null);
   const [showConfirmDeal, setShowConfirmDeal] = useState(false);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Check if there's an accepted rental between the two users
-  useEffect(() => {
+  const fetchRental = useCallback(async () => {
     if (!profile) return;
-    const fetchAcceptedRental = async () => {
-      const { data } = await supabase
-        .from('rentals')
-        .select('id, fit_id, start_date, end_date, owner_id, fits(title)')
-        .or(`and(owner_id.eq.${profile.id},renter_id.eq.${otherUser.id}),and(owner_id.eq.${otherUser.id},renter_id.eq.${profile.id})`)
-        .eq('status', 'accepted' as any)
-        .limit(1)
-        .maybeSingle();
-      if (data) {
-        setAcceptedRental({
-          ...data,
-          fit_title: (data as any).fits?.title,
-        });
-      } else {
-        setAcceptedRental(null);
-      }
-    };
-    fetchAcceptedRental();
-  }, [profile?.id, otherUser.id, conversationId]);
+    // Fetch the most relevant rental between the two users (not cancelled/completed first)
+    const { data } = await supabase
+      .from('rentals')
+      .select('id, fit_id, start_date, end_date, owner_id, renter_id, status, fits(title)')
+      .or(`and(owner_id.eq.${profile.id},renter_id.eq.${otherUser.id}),and(owner_id.eq.${otherUser.id},renter_id.eq.${profile.id})`)
+      .in('status', ['accepted', 'confirmed', 'active'] as any)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (data) {
+      setRental({ ...data, fit_title: (data as any).fits?.title });
+    } else {
+      setRental(null);
+    }
+  }, [profile?.id, otherUser.id]);
+
+  useEffect(() => {
+    fetchRental();
+  }, [fetchRental, conversationId]);
 
   const handleSend = async () => {
     if (!text.trim()) return;
@@ -65,7 +67,17 @@ export function ChatWindow({ conversationId, otherUser }: ChatWindowProps) {
     }
   };
 
-  const isOwner = acceptedRental && profile && acceptedRental.owner_id === profile.id;
+  const handleDealConfirmed = async () => {
+    // Send a system-style message about the confirmation
+    if (rental) {
+      const start = format(new Date(rental.start_date), 'MMM d');
+      const end = format(new Date(rental.end_date), 'MMM d, yyyy');
+      await sendMessage(`✅ Deal confirmed for ${start} to ${end}.`);
+    }
+    fetchRental();
+  };
+
+  const isOwner = rental && profile && rental.owner_id === profile.id;
 
   return (
     <div className="flex h-full flex-col">
@@ -80,17 +92,25 @@ export function ChatWindow({ conversationId, otherUser }: ChatWindowProps) {
           </Avatar>
           <span className="font-medium text-foreground">{otherUser.username}</span>
         </div>
-        {isOwner && acceptedRental && (
-          <Button
-            size="sm"
-            variant="terracotta"
-            className="gap-1.5"
-            onClick={() => setShowConfirmDeal(true)}
-          >
-            <Handshake className="h-4 w-4" /> Confirm Deal
-          </Button>
+        {rental && (
+          <ChatSettingsPanel
+            rental={rental}
+            isOwner={!!isOwner}
+            onConfirmDeal={() => setShowConfirmDeal(true)}
+            onRentalUpdated={fetchRental}
+          />
         )}
       </div>
+
+      {/* Deal Summary Card */}
+      {rental && ['confirmed', 'active'].includes(rental.status) && (
+        <DealSummaryCard
+          fitTitle={rental.fit_title}
+          startDate={rental.start_date}
+          endDate={rental.end_date}
+          status={rental.status}
+        />
+      )}
 
       {/* Messages */}
       <ScrollArea className="flex-1 p-4">
@@ -152,12 +172,12 @@ export function ChatWindow({ conversationId, otherUser }: ChatWindowProps) {
       </div>
 
       {/* Confirm Deal Dialog */}
-      {acceptedRental && (
+      {rental && (
         <ConfirmDealPanel
           open={showConfirmDeal}
           onOpenChange={setShowConfirmDeal}
-          rental={acceptedRental}
-          onConfirmed={() => setAcceptedRental(null)}
+          rental={rental}
+          onConfirmed={handleDealConfirmed}
         />
       )}
     </div>
