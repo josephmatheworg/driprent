@@ -173,12 +173,11 @@ export default function Profile() {
                   {displayLocation}
                 </span>
               )}
-              {(profile.rating ?? 0) > 0 && (
-                <span className="flex items-center gap-1">
-                  <Star className="h-4 w-4 fill-drip-gold text-drip-gold" />
-                  {(profile.rating ?? 0).toFixed(1)} ({profile.total_reviews} reviews)
-                </span>
-              )}
+              <span className="flex items-center gap-1">
+                <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                {((profile.rating ?? 0) > 0 ? (profile.rating ?? 0).toFixed(1) : '0.0')} rating
+              </span>
+              <span>{profile.total_reviews ?? 0} reviews</span>
             </div>
           </div>
         </div>
