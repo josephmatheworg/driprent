@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Camera, RotateCcw, Check, MapPin, Loader2 } from 'lucide-react';
+import { SelfieCamera, dataURLtoBlob } from '@/components/profile/SelfieCamera';
+import { LocationField } from '@/components/profile/LocationField';
 
 const GENDER_OPTIONS = ['Male', 'Female', 'Other', 'Prefer not to say'] as const;
 
@@ -20,7 +21,6 @@ const setupSchema = z.object({
   gender: z.string().min(1, 'Gender is required'),
   bio: z.string().trim().min(1, 'Bio is required').max(200, 'Bio must be less than 200 characters'),
   phone: z.string().trim().min(1, 'Phone number is required').regex(/^\+?[\d]{10,15}$/, 'Phone must be 10-15 digits, only numbers and + allowed'),
-  location: z.string().trim().min(1, 'Location is required').max(100),
 });
 
 type SetupFormData = z.infer<typeof setupSchema>;
@@ -30,33 +30,20 @@ export default function ProfileSetup() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
+  const [confirmedPhoto, setConfirmedPhoto] = useState<string | null>(null);
 
-  // Camera state
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [stream, setStream] = useState<MediaStream | null>(null);
-  const [capturedImage, setCapturedImage] = useState<string | null>(null);
-  const [confirmed, setConfirmed] = useState(false);
-  const [cameraActive, setCameraActive] = useState(false);
-  const [cameraError, setCameraError] = useState<string | null>(null);
-
-  const [geoLoading, setGeoLoading] = useState(false);
+  // Location state
+  const [locationCity, setLocationCity] = useState('');
+  const [locationState, setLocationState] = useState('');
+  const [locationCountry, setLocationCountry] = useState('');
 
   const { register, handleSubmit, formState: { errors }, reset, setValue: setFormValue } = useForm<SetupFormData>({
     resolver: zodResolver(setupSchema),
-    defaultValues: {
-      username: profile?.username || '',
-      gender: '',
-      bio: '',
-      phone: '',
-      location: '',
-    },
+    defaultValues: { username: '', gender: '', bio: '', phone: '' },
   });
 
   useEffect(() => {
-    if (!user) {
-      navigate('/login');
-    }
+    if (!user) navigate('/login');
   }, [user, navigate]);
 
   useEffect(() => {
@@ -66,132 +53,27 @@ export default function ProfileSetup() {
         gender: profile.gender || '',
         bio: profile.bio || '',
         phone: profile.phone || '',
-        location: profile.location || '',
       });
+      setLocationCity(profile.location_city || '');
+      setLocationState(profile.location_state || '');
+      setLocationCountry(profile.location_country || '');
     }
   }, [profile, reset]);
 
-  const handleUseCurrentLocation = async () => {
-    if (!navigator.geolocation) {
-      toast({ variant: 'destructive', title: 'Geolocation not supported', description: 'Your browser does not support location detection.' });
+  const onSubmit = async (data: SetupFormData) => {
+    if (!confirmedPhoto) {
+      toast({ variant: 'destructive', title: 'Photo required', description: 'Please capture and confirm your selfie.' });
       return;
     }
-    setGeoLoading(true);
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        try {
-          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${position.coords.latitude}&lon=${position.coords.longitude}&format=json`);
-          const data = await res.json();
-          const city = data.address?.city || data.address?.town || data.address?.village || '';
-          const state = data.address?.state || '';
-          const country = data.address?.country || '';
-          const location = [city, state, country].filter(Boolean).join(', ');
-          setFormValue('location', location);
-        } catch {
-          toast({ variant: 'destructive', title: 'Location failed', description: 'Could not detect your location.' });
-        } finally {
-          setGeoLoading(false);
-        }
-      },
-      () => {
-        toast({ variant: 'destructive', title: 'Location denied', description: 'Please allow location access or enter manually.' });
-        setGeoLoading(false);
-      }
-    );
-  };
-
-  const startCamera = useCallback(async () => {
-    try {
-      setCameraError(null);
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
-      });
-      setStream(mediaStream);
-      setCameraActive(true);
-      // Use timeout to ensure videoRef is rendered
-      setTimeout(() => {
-        if (videoRef.current) {
-          videoRef.current.srcObject = mediaStream;
-        }
-      }, 100);
-    } catch (err) {
-      console.error('Camera access error:', err);
-      setCameraError(
-        'Could not access camera. Please allow camera permissions in your browser settings and reload this page.'
-      );
-    }
-  }, []);
-
-  const stopCamera = useCallback(() => {
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-      setStream(null);
-    }
-    setCameraActive(false);
-  }, [stream]);
-
-  // Auto-start camera on mount
-  useEffect(() => {
-    if (user && !capturedImage && !cameraActive) {
-      startCamera();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
-    };
-  }, [stream]);
-
-  const capturePhoto = () => {
-    if (!videoRef.current || !canvasRef.current) return;
-    const canvas = canvasRef.current;
-    const video = videoRef.current;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.drawImage(video, 0, 0);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-      setCapturedImage(dataUrl);
-      setConfirmed(false);
-      stopCamera();
-    }
-  };
-
-  const retakePhoto = () => {
-    setCapturedImage(null);
-    setConfirmed(false);
-    startCamera();
-  };
-
-  const confirmPhoto = () => {
-    setConfirmed(true);
-  };
-
-  const dataURLtoBlob = (dataurl: string): Blob => {
-    const arr = dataurl.split(',');
-    const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
-    const bstr = atob(arr[1]);
-    const u8arr = new Uint8Array(bstr.length);
-    for (let i = 0; i < bstr.length; i++) u8arr[i] = bstr.charCodeAt(i);
-    return new Blob([u8arr], { type: mime });
-  };
-
-  const onSubmit = async (data: SetupFormData) => {
-    if (!capturedImage || !confirmed) {
-      toast({ variant: 'destructive', title: 'Photo required', description: 'Please capture and confirm your selfie.' });
+    if (!locationCity.trim()) {
+      toast({ variant: 'destructive', title: 'Location required', description: 'Please enter at least a city.' });
       return;
     }
     if (!profile || !user) return;
 
     setIsSaving(true);
     try {
-      const blob = dataURLtoBlob(capturedImage);
+      const blob = dataURLtoBlob(confirmedPhoto);
       const fileName = `${user.id}/avatar.jpg`;
       const { error: uploadError } = await supabase.storage
         .from('avatars')
@@ -199,6 +81,7 @@ export default function ProfileSetup() {
       if (uploadError) throw uploadError;
 
       const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
+      const location = [locationCity, locationState, locationCountry].filter(Boolean).join(', ');
 
       const { error } = await supabase
         .from('profiles')
@@ -207,7 +90,10 @@ export default function ProfileSetup() {
           gender: data.gender,
           bio: data.bio,
           phone: data.phone,
-          location: data.location,
+          location,
+          location_city: locationCity.trim(),
+          location_state: locationState.trim(),
+          location_country: locationCountry.trim(),
           avatar_url: `${urlData.publicUrl}?t=${Date.now()}`,
         })
         .eq('id', profile.id);
@@ -238,70 +124,16 @@ export default function ProfileSetup() {
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-              {/* Photo Section — Selfie Camera Only */}
+              {/* Selfie Camera */}
               <div>
                 <Label>Profile Selfie</Label>
-                <div className="mt-2 flex flex-col items-center gap-3">
-                  {capturedImage ? (
-                    <>
-                      <img
-                        src={capturedImage}
-                        alt="Selfie preview"
-                        className="h-32 w-32 rounded-full object-cover border-2 border-primary sm:h-40 sm:w-40"
-                      />
-                      {confirmed ? (
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-primary flex items-center gap-1">
-                            <Check className="h-4 w-4" /> Photo confirmed
-                          </span>
-                          <Button type="button" variant="outline" size="sm" onClick={retakePhoto}>
-                            <RotateCcw className="mr-2 h-4 w-4" />
-                            Retake Selfie
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="flex gap-2">
-                          <Button type="button" variant="outline" size="sm" onClick={retakePhoto}>
-                            <RotateCcw className="mr-2 h-4 w-4" />
-                            Retake Selfie
-                          </Button>
-                          <Button type="button" size="sm" onClick={confirmPhoto}>
-                            <Check className="mr-2 h-4 w-4" />
-                            Confirm Photo
-                          </Button>
-                        </div>
-                      )}
-                    </>
-                  ) : cameraActive ? (
-                    <>
-                      <video
-                        ref={videoRef}
-                        autoPlay
-                        playsInline
-                        muted
-                        className="h-32 w-32 rounded-full object-cover border-2 border-muted sm:h-40 sm:w-40"
-                      />
-                      <Button type="button" variant="default" size="sm" onClick={capturePhoto}>
-                        <Camera className="mr-2 h-4 w-4" />
-                        Capture Selfie
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <div className="flex h-32 w-32 items-center justify-center rounded-full bg-muted sm:h-40 sm:w-40">
-                        <Camera className="h-10 w-10 text-muted-foreground" />
-                      </div>
-                      {cameraError && (
-                        <p className="text-sm text-destructive text-center max-w-xs">{cameraError}</p>
-                      )}
-                      <Button type="button" variant="outline" size="sm" onClick={startCamera}>
-                        <Camera className="mr-2 h-4 w-4" />
-                        Open Camera
-                      </Button>
-                    </>
-                  )}
+                <div className="mt-2">
+                  <SelfieCamera
+                    autoStart
+                    onPhotoConfirmed={setConfirmedPhoto}
+                    currentAvatarUrl={profile?.avatar_url}
+                  />
                 </div>
-                <canvas ref={canvasRef} className="hidden" />
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
@@ -310,7 +142,6 @@ export default function ProfileSetup() {
                   <Input id="setup-username" {...register('username')} className="mt-1.5" />
                   {errors.username && <p className="mt-1 text-sm text-destructive">{errors.username.message}</p>}
                 </div>
-
                 <div>
                   <Label htmlFor="setup-gender">Gender</Label>
                   <Select onValueChange={(v) => setFormValue('gender', v)} defaultValue="">
@@ -329,26 +160,24 @@ export default function ProfileSetup() {
 
               <div>
                 <Label htmlFor="setup-bio">Bio</Label>
-                <Textarea id="setup-bio" placeholder="Tell us about yourself..." {...register('bio')} className="mt-1.5" maxLength={300} />
+                <Textarea id="setup-bio" placeholder="Tell us about yourself..." {...register('bio')} className="mt-1.5" maxLength={200} />
                 {errors.bio && <p className="mt-1 text-sm text-destructive">{errors.bio.message}</p>}
               </div>
 
               <div>
                 <Label htmlFor="setup-phone">Phone Number</Label>
-                <Input id="setup-phone" type="tel" placeholder="+1 (555) 000-0000" {...register('phone')} className="mt-1.5" />
+                <Input id="setup-phone" type="tel" placeholder="+91 9876543210" {...register('phone')} className="mt-1.5" />
                 {errors.phone && <p className="mt-1 text-sm text-destructive">{errors.phone.message}</p>}
               </div>
 
-              <div>
-                <Label htmlFor="setup-location">Location</Label>
-                <div className="mt-1.5 flex gap-2">
-                  <Input id="setup-location" placeholder="City, Country" {...register('location')} className="flex-1" />
-                  <Button type="button" variant="outline" size="icon" className="shrink-0" onClick={handleUseCurrentLocation} disabled={geoLoading}>
-                    {geoLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />}
-                  </Button>
-                </div>
-                {errors.location && <p className="mt-1 text-sm text-destructive">{errors.location.message}</p>}
-              </div>
+              <LocationField
+                city={locationCity}
+                state={locationState}
+                country={locationCountry}
+                onCityChange={setLocationCity}
+                onStateChange={setLocationState}
+                onCountryChange={setLocationCountry}
+              />
 
               <Button type="submit" variant="hero" className="mt-6 w-full" size="lg" disabled={isSaving}>
                 {isSaving ? 'Saving...' : 'Complete Setup'}
