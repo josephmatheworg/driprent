@@ -226,6 +226,14 @@ export default function ProfileSetup() {
       <div className="container mx-auto flex min-h-screen items-center justify-center px-4 py-12">
         <div className="w-full max-w-lg">
           <div className="glass-card rounded-2xl p-6 shadow-soft-lg sm:p-8">
+            {/* Back to Sign Up */}
+            <button
+              type="button"
+              onClick={handleBackToSignup}
+              className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors min-h-[44px]"
+            >
+              <ArrowLeft className="h-4 w-4" /> Back to Sign Up
+            </button>
             {/* Progress indicator */}
             <div className="mb-6 space-y-2">
               <p className="text-sm font-medium text-muted-foreground text-center">
