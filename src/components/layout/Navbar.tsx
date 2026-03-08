@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { User, Heart, Package, LogOut, Bell, Menu, X, Pencil } from 'lucide-react';
+import { User, Heart, Package, LogOut, Bell, Menu, X } from 'lucide-react';
 
 export function Navbar() {
   const { user, profile, signOut } = useAuth();
@@ -84,12 +84,6 @@ export function Navbar() {
                     <Link to="/profile" className="flex cursor-pointer items-center">
                       <User className="mr-2 h-4 w-4" />
                       Profile
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/edit-profile" className="flex cursor-pointer items-center">
-                      <Pencil className="mr-2 h-4 w-4" />
-                      Edit Profile
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
@@ -175,9 +169,6 @@ export function Navbar() {
                 </div>
                 <Link to="/profile" onClick={closeMobile} className="rounded-lg px-3 py-2.5 text-sm text-foreground hover:bg-accent flex items-center gap-2">
                   <User className="h-4 w-4" /> Profile
-                </Link>
-                <Link to="/edit-profile" onClick={closeMobile} className="rounded-lg px-3 py-2.5 text-sm text-foreground hover:bg-accent flex items-center gap-2">
-                  <Pencil className="h-4 w-4" /> Edit Profile
                 </Link>
                 <Link to="/my-fits" onClick={closeMobile} className="rounded-lg px-3 py-2.5 text-sm text-foreground hover:bg-accent flex items-center gap-2">
                   <Heart className="h-4 w-4" /> My Fits
