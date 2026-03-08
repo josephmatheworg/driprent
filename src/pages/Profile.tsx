@@ -57,6 +57,7 @@ export default function Profile() {
     if (profile) {
       reset({
         username: profile.username,
+        gender: profile.gender || '',
         bio: profile.bio || '',
         phone: profile.phone || '',
         location: profile.location || '',
