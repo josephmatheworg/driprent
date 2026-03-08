@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,7 +13,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Camera, MapPin, Star, RotateCcw, Check, Loader2 } from 'lucide-react';
+import { MapPin, Star } from 'lucide-react';
+import { SelfieCamera, dataURLtoBlob } from '@/components/profile/SelfieCamera';
+import { LocationField } from '@/components/profile/LocationField';
 
 const GENDER_OPTIONS = ['Male', 'Female', 'Other', 'Prefer not to say'] as const;
 
@@ -21,8 +23,7 @@ const profileSchema = z.object({
   username: z.string().trim().min(3, 'Username must be at least 3 characters').max(30, 'Username must be less than 30 characters').regex(/^[a-zA-Z0-9_]+$/, 'Only letters, numbers, and underscores allowed'),
   gender: z.string().optional(),
   bio: z.string().trim().max(200, 'Bio must be less than 200 characters').optional(),
-  phone: z.string().trim().regex(/^(\+?[\d]{10,15})?$/, 'Phone must be 10-15 digits, only numbers and + allowed').optional(),
-  location: z.string().trim().min(1, 'Location is required').max(100, 'Location must be less than 100 characters'),
+  phone: z.string().trim().regex(/^(\+?[\d]{10,15})?$/, 'Phone must be 10-15 digits').optional(),
 });
 
 type ProfileFormData = z.infer<typeof profileSchema>;
@@ -30,165 +31,64 @@ type ProfileFormData = z.infer<typeof profileSchema>;
 export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [geoLoading, setGeoLoading] = useState(false);
   const { user, profile, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Camera state
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [stream, setStream] = useState<MediaStream | null>(null);
-  const [capturedImage, setCapturedImage] = useState<string | null>(null);
-  const [confirmedImage, setConfirmedImage] = useState(false);
-  const [cameraActive, setCameraActive] = useState(false);
-  const [cameraError, setCameraError] = useState<string | null>(null);
+  // Photo state
+  const [confirmedPhoto, setConfirmedPhoto] = useState<string | null>(null);
   const [photoChanged, setPhotoChanged] = useState(false);
+
+  // Location state
+  const [locationCity, setLocationCity] = useState('');
+  const [locationState, setLocationState] = useState('');
+  const [locationCountry, setLocationCountry] = useState('');
 
   const { register, handleSubmit, formState: { errors }, reset, setValue: setFormValue } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
   });
 
-  useEffect(() => {
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
-    if (profile) {
-      reset({
-        username: profile.username,
-        gender: profile.gender || '',
-        bio: profile.bio || '',
-        phone: profile.phone || '',
-        location: profile.location || '',
-      });
-    }
-  }, [user, profile, navigate, reset]);
-
-  // Camera helpers
-  const startCamera = useCallback(async () => {
-    try {
-      setCameraError(null);
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
-      });
-      setStream(mediaStream);
-      setCameraActive(true);
-      setTimeout(() => {
-        if (videoRef.current) videoRef.current.srcObject = mediaStream;
-      }, 100);
-    } catch {
-      setCameraError('Could not access camera. Please allow camera permissions in your browser settings.');
-    }
-  }, []);
-
-  const stopCamera = useCallback(() => {
-    if (stream) {
-      stream.getTracks().forEach(t => t.stop());
-      setStream(null);
-    }
-    setCameraActive(false);
-  }, [stream]);
+  const resetFormFromProfile = () => {
+    if (!profile) return;
+    reset({
+      username: profile.username,
+      gender: profile.gender || '',
+      bio: profile.bio || '',
+      phone: profile.phone || '',
+    });
+    setLocationCity(profile.location_city || '');
+    setLocationState(profile.location_state || '');
+    setLocationCountry(profile.location_country || '');
+  };
 
   useEffect(() => {
-    return () => { stream?.getTracks().forEach(t => t.stop()); };
-  }, [stream]);
-
-  const capturePhoto = () => {
-    if (!videoRef.current || !canvasRef.current) return;
-    const canvas = canvasRef.current;
-    const video = videoRef.current;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.drawImage(video, 0, 0);
-      setCapturedImage(canvas.toDataURL('image/jpeg', 0.8));
-      setConfirmedImage(false);
-      setPhotoChanged(true);
-      stopCamera();
-    }
-  };
-
-  const retakePhoto = () => {
-    setCapturedImage(null);
-    setConfirmedImage(false);
-    startCamera();
-  };
-
-  const confirmPhoto = () => {
-    setConfirmedImage(true);
-  };
-
-  const dataURLtoBlob = (dataurl: string): Blob => {
-    const arr = dataurl.split(',');
-    const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
-    const bstr = atob(arr[1]);
-    const u8arr = new Uint8Array(bstr.length);
-    for (let i = 0; i < bstr.length; i++) u8arr[i] = bstr.charCodeAt(i);
-    return new Blob([u8arr], { type: mime });
-  };
-
-  // Geolocation
-  const handleUseCurrentLocation = async () => {
-    if (!navigator.geolocation) {
-      toast({ variant: 'destructive', title: 'Geolocation not supported', description: 'Your browser does not support location detection.' });
-      return;
-    }
-    setGeoLoading(true);
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        try {
-          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${position.coords.latitude}&lon=${position.coords.longitude}&format=json`);
-          const data = await res.json();
-          const city = data.address?.city || data.address?.town || data.address?.village || '';
-          const state = data.address?.state || '';
-          const country = data.address?.country || '';
-          const location = [city, state, country].filter(Boolean).join(', ');
-          setFormValue('location', location);
-        } catch {
-          toast({ variant: 'destructive', title: 'Location failed', description: 'Could not detect your location.' });
-        } finally {
-          setGeoLoading(false);
-        }
-      },
-      () => {
-        toast({ variant: 'destructive', title: 'Location denied', description: 'Please allow location access or enter manually.' });
-        setGeoLoading(false);
-      }
-    );
-  };
+    if (!user) { navigate('/auth'); return; }
+    resetFormFromProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, profile, navigate]);
 
   const enterEditMode = () => {
     setIsEditing(true);
-    setCapturedImage(null);
-    setConfirmedImage(false);
+    setConfirmedPhoto(null);
     setPhotoChanged(false);
-    setCameraActive(false);
-    setCameraError(null);
   };
 
   const cancelEdit = () => {
     setIsEditing(false);
-    stopCamera();
-    setCapturedImage(null);
-    setConfirmedImage(false);
+    setConfirmedPhoto(null);
     setPhotoChanged(false);
-    if (profile) {
-      reset({
-        username: profile.username,
-        gender: profile.gender || '',
-        bio: profile.bio || '',
-        phone: profile.phone || '',
-        location: profile.location || '',
-      });
-    }
+    resetFormFromProfile();
+  };
+
+  const handlePhotoConfirmed = (dataUrl: string) => {
+    setConfirmedPhoto(dataUrl);
+    setPhotoChanged(true);
   };
 
   const onSubmit = async (data: ProfileFormData) => {
     if (!profile || !user) return;
 
-    if (photoChanged && capturedImage && !confirmedImage) {
+    if (photoChanged && !confirmedPhoto) {
       toast({ variant: 'destructive', title: 'Photo not confirmed', description: 'Please confirm your selfie before saving.' });
       return;
     }
@@ -197,8 +97,8 @@ export default function Profile() {
     try {
       let avatarUrl = profile.avatar_url;
 
-      if (photoChanged && capturedImage && confirmedImage) {
-        const blob = dataURLtoBlob(capturedImage);
+      if (photoChanged && confirmedPhoto) {
+        const blob = dataURLtoBlob(confirmedPhoto);
         const fileName = `${user.id}/avatar.jpg`;
         const { error: uploadError } = await supabase.storage
           .from('avatars')
@@ -208,6 +108,8 @@ export default function Profile() {
         avatarUrl = `${urlData.publicUrl}?t=${Date.now()}`;
       }
 
+      const location = [locationCity, locationState, locationCountry].filter(Boolean).join(', ');
+
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -215,7 +117,10 @@ export default function Profile() {
           gender: data.gender || null,
           bio: data.bio || null,
           phone: data.phone || null,
-          location: data.location || null,
+          location,
+          location_city: locationCity.trim() || null,
+          location_state: locationState.trim() || null,
+          location_country: locationCountry.trim() || null,
           avatar_url: avatarUrl,
         })
         .eq('id', profile.id);
@@ -244,7 +149,7 @@ export default function Profile() {
     );
   }
 
-  const displayImage = capturedImage || profile.avatar_url || '';
+  const displayLocation = [profile.location_city, profile.location_state, profile.location_country].filter(Boolean).join(', ') || profile.location;
 
   return (
     <Layout>
@@ -254,31 +159,19 @@ export default function Profile() {
         <form onSubmit={handleSubmit(onSubmit)} className="mt-8">
           {/* Avatar Section */}
           <div className="flex items-center gap-6">
-            <div className="relative">
-              {isEditing && cameraActive ? (
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className="h-24 w-24 rounded-full object-cover border-2 border-muted"
-                />
-              ) : (
-                <Avatar className="h-24 w-24">
-                  <AvatarImage src={displayImage} />
-                  <AvatarFallback className="text-2xl">
-                    {profile.username?.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-              )}
-            </div>
+            <Avatar className="h-24 w-24">
+              <AvatarImage src={confirmedPhoto || profile.avatar_url || ''} />
+              <AvatarFallback className="text-2xl">
+                {profile.username?.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
             <div>
               <h2 className="font-display text-2xl">{profile.username}</h2>
               <div className="mt-1 flex items-center gap-4 text-sm text-muted-foreground">
-                {profile.location && (
+                {displayLocation && (
                   <span className="flex items-center gap-1">
                     <MapPin className="h-4 w-4" />
-                    {profile.location}
+                    {displayLocation}
                   </span>
                 )}
                 {(profile.rating ?? 0) > 0 && (
@@ -291,40 +184,13 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* Camera controls when editing */}
+          {/* Camera in edit mode */}
           {isEditing && (
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              {cameraActive ? (
-                <Button type="button" size="sm" onClick={capturePhoto}>
-                  <Camera className="mr-2 h-4 w-4" /> Capture Selfie
-                </Button>
-              ) : capturedImage && !confirmedImage ? (
-                <>
-                  <Button type="button" variant="outline" size="sm" onClick={retakePhoto}>
-                    <RotateCcw className="mr-2 h-4 w-4" /> Retake Selfie
-                  </Button>
-                  <Button type="button" size="sm" onClick={confirmPhoto}>
-                    <Check className="mr-2 h-4 w-4" /> Confirm Photo
-                  </Button>
-                </>
-              ) : capturedImage && confirmedImage ? (
-                <>
-                  <span className="text-sm font-medium text-primary flex items-center gap-1">
-                    <Check className="h-4 w-4" /> Photo confirmed
-                  </span>
-                  <Button type="button" variant="outline" size="sm" onClick={retakePhoto}>
-                    <RotateCcw className="mr-2 h-4 w-4" /> Retake Selfie
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button type="button" variant="outline" size="sm" onClick={startCamera}>
-                    <Camera className="mr-2 h-4 w-4" /> Retake Selfie
-                  </Button>
-                  {cameraError && <p className="text-sm text-destructive">{cameraError}</p>}
-                </>
-              )}
-              <canvas ref={canvasRef} className="hidden" />
+            <div className="mt-4">
+              <SelfieCamera
+                onPhotoConfirmed={handlePhotoConfirmed}
+                currentAvatarUrl={profile.avatar_url}
+              />
             </div>
           )}
 
@@ -336,7 +202,6 @@ export default function Profile() {
                 <Input id="username" {...register('username')} disabled={!isEditing} className="mt-1.5" />
                 {errors.username && <p className="mt-1 text-sm text-destructive">{errors.username.message}</p>}
               </div>
-
               <div>
                 <Label htmlFor="gender">Gender</Label>
                 {isEditing ? (
@@ -356,47 +221,34 @@ export default function Profile() {
               </div>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <Label htmlFor="phone">Phone</Label>
-                <Input id="phone" type="tel" placeholder="+919876543210" {...register('phone')} disabled={!isEditing} className="mt-1.5" />
-                {errors.phone && <p className="mt-1 text-sm text-destructive">{errors.phone.message}</p>}
-              </div>
+            <div>
+              <Label htmlFor="phone">Phone</Label>
+              <Input id="phone" type="tel" placeholder="+91 9876543210" {...register('phone')} disabled={!isEditing} className="mt-1.5" />
+              {errors.phone && <p className="mt-1 text-sm text-destructive">{errors.phone.message}</p>}
             </div>
 
             <div>
               <Label htmlFor="bio">Bio</Label>
-              <Textarea
-                id="bio"
-                placeholder="Tell others about yourself and your style..."
-                {...register('bio')}
-                disabled={!isEditing}
-                className="mt-1.5"
-                maxLength={200}
-              />
+              <Textarea id="bio" placeholder="Tell others about yourself..." {...register('bio')} disabled={!isEditing} className="mt-1.5" maxLength={200} />
               {errors.bio && <p className="mt-1 text-sm text-destructive">{errors.bio.message}</p>}
             </div>
 
-            <div>
-              <Label htmlFor="location">Location</Label>
-              <div className="mt-1.5 flex gap-2">
-                <Input id="location" placeholder="City, Country" {...register('location')} disabled={!isEditing} className="flex-1" />
-                {isEditing && (
-                  <Button type="button" variant="outline" size="sm" className="shrink-0 whitespace-nowrap" onClick={handleUseCurrentLocation} disabled={geoLoading}>
-                    {geoLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MapPin className="mr-2 h-4 w-4" />}
-                    Use Your Current Location
-                  </Button>
-                )}
-              </div>
-              {errors.location && <p className="mt-1 text-sm text-destructive">{errors.location.message}</p>}
-            </div>
+            <LocationField
+              city={isEditing ? locationCity : (profile.location_city || '')}
+              state={isEditing ? locationState : (profile.location_state || '')}
+              country={isEditing ? locationCountry : (profile.location_country || '')}
+              onCityChange={setLocationCity}
+              onStateChange={setLocationState}
+              onCountryChange={setLocationCountry}
+              disabled={!isEditing}
+            />
           </div>
 
           {/* Actions */}
           <div className="mt-8 flex gap-4">
             {isEditing ? (
               <>
-                <Button type="submit" variant="terracotta" disabled={isSaving}>
+                <Button type="submit" disabled={isSaving}>
                   {isSaving ? 'Saving...' : 'Save Changes'}
                 </Button>
                 <Button type="button" variant="outline" onClick={cancelEdit}>
