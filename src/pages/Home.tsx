@@ -6,6 +6,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CATEGORIES } from '@/types/database';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import heroFashion from '@/assets/hero-fashion.jpg';
 import categoryDresses from '@/assets/category-dresses.jpg';
 import categorySuits from '@/assets/category-suits.jpg';
 import categoryStreetwear from '@/assets/category-streetwear.jpg';
@@ -78,16 +80,61 @@ function HomeFitCard({ fit }: { fit: any }) {
           </Avatar>
           <span className="text-xs text-muted-foreground truncate">{ownerUsername}</span>
         </div>
-        <Button
-          variant="default"
-          size="sm"
-          className="mt-3 w-full"
-          asChild
-        >
+        <Button variant="default" size="sm" className="mt-3 w-full" asChild>
           <Link to={`/fit/${fit.id}`}>Rent Fit</Link>
         </Button>
       </div>
     </div>
+  );
+}
+
+function TrendingFitCard({ fit }: { fit: any }) {
+  const imageUrl = fit.images?.[0] || '/placeholder.svg';
+  const ownerUsername = fit.profiles?.username || 'Unknown';
+  const ownerAvatar = fit.profiles?.avatar_url || '';
+
+  return (
+    <div className="group w-56 shrink-0 overflow-hidden rounded-2xl border border-border bg-card shadow-card transition-all duration-300 hover:shadow-card-hover hover:border-primary/30 sm:w-64">
+      <Link to={`/fit/${fit.id}`} className="block">
+        <div className="relative aspect-[3/4] overflow-hidden">
+          <img src={imageUrl} alt={fit.title} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" />
+          <div className="absolute bottom-2 right-2 rounded-full bg-background/90 px-3 py-1 text-sm font-semibold text-foreground backdrop-blur-sm">
+            ${fit.daily_price}/day
+          </div>
+        </div>
+      </Link>
+      <div className="p-3">
+        <h3 className="font-medium text-foreground line-clamp-1 text-sm">{fit.title}</h3>
+        <div className="mt-1.5 flex items-center gap-2">
+          <Avatar className="h-4 w-4">
+            <AvatarImage src={ownerAvatar} />
+            <AvatarFallback className="text-[8px] bg-primary text-primary-foreground">{ownerUsername.charAt(0).toUpperCase()}</AvatarFallback>
+          </Avatar>
+          <span className="text-xs text-muted-foreground truncate">{ownerUsername}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CommunityCard({ fit }: { fit: any }) {
+  const imageUrl = fit.images?.[0] || '/placeholder.svg';
+  const ownerUsername = fit.profiles?.username || 'Unknown';
+  const ownerAvatar = fit.profiles?.avatar_url || '';
+
+  return (
+    <Link to={`/fit/${fit.id}`} className="group block overflow-hidden rounded-2xl border border-border bg-card shadow-card transition-all duration-300 hover:shadow-card-hover">
+      <div className="aspect-square overflow-hidden">
+        <img src={imageUrl} alt={fit.title} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" />
+      </div>
+      <div className="flex items-center gap-2 p-3">
+        <Avatar className="h-6 w-6">
+          <AvatarImage src={ownerAvatar} />
+          <AvatarFallback className="text-[10px] bg-primary text-primary-foreground">{ownerUsername.charAt(0).toUpperCase()}</AvatarFallback>
+        </Avatar>
+        <span className="text-sm text-foreground truncate font-medium">{ownerUsername}</span>
+      </div>
+    </Link>
   );
 }
 
@@ -106,8 +153,22 @@ export default function Home() {
     },
   });
 
-  const { data: randomFits, isLoading: randomLoading } = useQuery({
-    queryKey: ['random-fits'],
+  const { data: trendingFits, isLoading: trendingLoading } = useQuery({
+    queryKey: ['trending-fits'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('fits')
+        .select('*, profiles!fits_owner_id_fkey(username, avatar_url)')
+        .eq('is_available', true)
+        .order('total_rentals', { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: communityFits, isLoading: communityLoading } = useQuery({
+    queryKey: ['community-fits'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('fits')
@@ -115,15 +176,35 @@ export default function Home() {
         .eq('is_available', true)
         .limit(20);
       if (error) throw error;
-      const shuffled = (data || []).sort(() => Math.random() - 0.5);
-      return shuffled.slice(0, 6);
+      return (data || []).sort(() => Math.random() - 0.5).slice(0, 6);
     },
   });
 
   return (
     <Layout>
+      {/* Section 1 — Hero Banner */}
+      <section className="relative overflow-hidden">
+        <div className="absolute inset-0">
+          <img src={heroFashion} alt="Fashion" className="h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent" />
+        </div>
+        <div className="container relative mx-auto flex min-h-[320px] items-center px-4 py-16 sm:min-h-[400px] sm:py-20">
+          <div className="max-w-lg">
+            <h1 className="font-display text-4xl text-white sm:text-5xl md:text-6xl">
+              DISCOVER UNIQUE FITS FROM YOUR COMMUNITY
+            </h1>
+            <p className="mt-3 text-base text-white/80 sm:mt-4 sm:text-lg">
+              Rent designer outfits, streetwear, and more from people near you.
+            </p>
+            <Button asChild size="lg" className="mt-6">
+              <Link to="/browse">Browse Fits</Link>
+            </Button>
+          </div>
+        </div>
+      </section>
+
       <div className="container mx-auto px-4 py-6 space-y-12 sm:py-8 sm:space-y-16">
-        {/* Section 1 — Recently Added Fits */}
+        {/* Section 2 — Recently Added Fits */}
         <section>
           <h2 className="font-display text-3xl text-foreground sm:text-4xl">RECENTLY ADDED</h2>
           <p className="mt-1 text-sm text-muted-foreground sm:mt-2 sm:text-base">Fresh fits just listed on the platform</p>
@@ -140,24 +221,37 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Section 2 — Discover More Styles */}
+        {/* Section 3 — Trending Fits */}
         <section>
-          <h2 className="font-display text-3xl text-foreground sm:text-4xl">DISCOVER MORE STYLES</h2>
-          <p className="mt-1 text-sm text-muted-foreground sm:mt-2 sm:text-base">Explore new looks every time you visit</p>
-          <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3">
-            {randomLoading
-              ? Array.from({ length: 6 }).map((_, i) => <FitCardSkeleton key={i} />)
-              : randomFits && randomFits.length > 0
-                ? randomFits.map((fit) => <HomeFitCard key={fit.id} fit={fit} />)
-                : (
-                  <div className="col-span-full py-12 text-center text-muted-foreground">
-                    No fits to explore yet.
-                  </div>
-                )}
+          <h2 className="font-display text-3xl text-foreground sm:text-4xl">TRENDING FITS</h2>
+          <p className="mt-1 text-sm text-muted-foreground sm:mt-2 sm:text-base">Most popular outfits on the platform</p>
+          <div className="mt-6">
+            <ScrollArea className="w-full">
+              <div className="flex gap-3 pb-4 sm:gap-4">
+                {trendingLoading
+                  ? Array.from({ length: 5 }).map((_, i) => (
+                      <div key={i} className="w-56 shrink-0 sm:w-64">
+                        <Skeleton className="aspect-[3/4] w-full rounded-2xl" />
+                        <div className="mt-2 space-y-1">
+                          <Skeleton className="h-4 w-3/4" />
+                          <Skeleton className="h-3 w-1/2" />
+                        </div>
+                      </div>
+                    ))
+                  : trendingFits && trendingFits.length > 0
+                    ? trendingFits.map((fit) => <TrendingFitCard key={fit.id} fit={fit} />)
+                    : (
+                      <div className="py-12 text-center text-muted-foreground w-full">
+                        No trending fits yet.
+                      </div>
+                    )}
+              </div>
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
           </div>
         </section>
 
-        {/* Bottom Section — Browse Outfits */}
+        {/* Section 4 — Browse Outfits Categories */}
         <section>
           <h2 className="font-display text-3xl text-foreground sm:text-4xl">BROWSE OUTFITS</h2>
           <p className="mt-1 text-sm text-muted-foreground sm:mt-2 sm:text-base">Find the perfect fit for any occasion</p>
@@ -183,6 +277,23 @@ export default function Home() {
                 </div>
               </Link>
             ))}
+          </div>
+        </section>
+
+        {/* Section 5 — Community Showcase */}
+        <section>
+          <h2 className="font-display text-3xl text-foreground sm:text-4xl">COMMUNITY SHOWCASE</h2>
+          <p className="mt-1 text-sm text-muted-foreground sm:mt-2 sm:text-base">See what others are sharing</p>
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3">
+            {communityLoading
+              ? Array.from({ length: 6 }).map((_, i) => <FitCardSkeleton key={i} />)
+              : communityFits && communityFits.length > 0
+                ? communityFits.map((fit) => <CommunityCard key={fit.id} fit={fit} />)
+                : (
+                  <div className="col-span-full py-12 text-center text-muted-foreground">
+                    No community fits to show yet.
+                  </div>
+                )}
           </div>
         </section>
       </div>
