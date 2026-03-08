@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { SelfieCamera, dataURLtoBlob } from '@/components/profile/SelfieCamera';
 import { LocationField } from '@/components/profile/LocationField';
+import { BackgroundDecor } from '@/components/layout/BackgroundDecor';
 
 const GENDER_OPTIONS = ['Male', 'Female', 'Other', 'Prefer not to say'] as const;
 
