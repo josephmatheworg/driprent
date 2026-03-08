@@ -68,7 +68,7 @@ export default function Auth() {
       });
     } else {
       toast({ title: 'Welcome back!' });
-      navigate('/');
+      navigate('/home');
     }
   };
 
