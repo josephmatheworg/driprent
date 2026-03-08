@@ -338,6 +338,26 @@ export default function Profile() {
               </div>
 
               <div>
+                <Label htmlFor="gender">Gender</Label>
+                {isEditing ? (
+                  <Select onValueChange={(v) => setFormValue('gender', v)} defaultValue={profile.gender || ''}>
+                    <SelectTrigger className="mt-1.5">
+                      <SelectValue placeholder="Select gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {GENDER_OPTIONS.map((g) => (
+                        <SelectItem key={g} value={g}>{g}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input value={profile.gender || 'Not set'} disabled className="mt-1.5" />
+                )}
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
                 <Label htmlFor="phone">Phone</Label>
                 <Input id="phone" type="tel" placeholder="+919876543210" {...register('phone')} disabled={!isEditing} className="mt-1.5" />
                 {errors.phone && <p className="mt-1 text-sm text-destructive">{errors.phone.message}</p>}
