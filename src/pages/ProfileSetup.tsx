@@ -358,6 +358,21 @@ export default function ProfileSetup() {
           </div>
         </div>
       </div>
+      {/* Leave confirmation dialog */}
+      <AlertDialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave profile setup?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to go back? Your profile setup is not finished.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Stay</AlertDialogCancel>
+            <AlertDialogAction onClick={performLeave}>Go Back</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </BackgroundDecor>
   );
 }
