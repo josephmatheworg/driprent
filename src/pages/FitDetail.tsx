@@ -203,7 +203,7 @@ export default function FitDetail() {
               {fit.condition && <Badge variant="outline">{fit.condition}</Badge>}
             </div>
 
-            <h1 className="font-display text-4xl text-foreground lg:text-5xl">{fit.title}</h1>
+            <h1 className="font-display text-3xl text-foreground sm:text-4xl lg:text-5xl">{fit.title}</h1>
 
             <div className="mt-4 flex items-center gap-4">
               <div>
@@ -267,16 +267,18 @@ export default function FitDetail() {
               <div className="rounded-xl border border-border bg-card p-6 shadow-card">
                 <h3 className="mb-4 font-display text-2xl">SELECT DATES</h3>
 
-                <Calendar
-                  mode="range"
-                  selected={dateRange}
-                  onSelect={setDateRange}
-                  disabled={(date) => date < new Date() || isDateBooked(date)}
-                  modifiers={{ booked: bookedDates }}
-                  modifiersClassNames={{ booked: 'bg-destructive/20 text-destructive line-through' }}
-                  className={cn("rounded-md border pointer-events-auto")}
-                  numberOfMonths={1}
-                />
+                <div className="overflow-x-auto -mx-2 px-2">
+                  <Calendar
+                    mode="range"
+                    selected={dateRange}
+                    onSelect={setDateRange}
+                    disabled={(date) => date < new Date() || isDateBooked(date)}
+                    modifiers={{ booked: bookedDates }}
+                    modifiersClassNames={{ booked: 'bg-destructive/20 text-destructive line-through' }}
+                    className={cn("rounded-md border pointer-events-auto mx-auto")}
+                    numberOfMonths={1}
+                  />
+                </div>
 
                 {bookedDates.length > 0 && (
                   <p className="mt-2 text-xs text-muted-foreground">

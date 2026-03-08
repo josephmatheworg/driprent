@@ -78,19 +78,19 @@ export default function MyFits() {
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="font-display text-5xl text-foreground">MY FITS</h1>
+            <h1 className="font-display text-4xl text-foreground sm:text-5xl">MY FITS</h1>
             <p className="mt-2 text-muted-foreground">
               Manage the fits you've listed for rent
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => { setEditingOutfit(null); setOutfitModalOpen(true); }}>
+            <Button variant="outline" size="sm" className="min-h-[44px] sm:min-h-0 sm:size-auto" onClick={() => { setEditingOutfit(null); setOutfitModalOpen(true); }}>
               <Shirt className="mr-2 h-4 w-4" />
               Create Outfit
             </Button>
-            <Button variant="terracotta" asChild>
+            <Button variant="terracotta" size="sm" className="min-h-[44px] sm:min-h-0 sm:size-auto" asChild>
               <Link to="/upload">
                 <Plus className="mr-2 h-4 w-4" />
                 Add New Fit

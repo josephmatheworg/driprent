@@ -224,7 +224,7 @@ export default function Rentals() {
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8">
-        <h1 className="font-display text-5xl text-foreground">RENTALS</h1>
+        <h1 className="font-display text-4xl text-foreground sm:text-5xl">RENTALS</h1>
         <p className="mt-2 text-muted-foreground">Track your rental activity</p>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-8">

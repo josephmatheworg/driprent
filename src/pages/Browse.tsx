@@ -87,7 +87,7 @@ export default function Browse() {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="font-display text-5xl text-foreground">BROWSE FITS</h1>
+          <h1 className="font-display text-4xl text-foreground sm:text-5xl">BROWSE FITS</h1>
           <p className="mt-2 text-muted-foreground">Discover unique styles from our community</p>
         </div>
 
