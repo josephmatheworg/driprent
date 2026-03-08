@@ -196,11 +196,19 @@ export function SelfieCamera({ onPhotoConfirmed, currentAvatarUrl, autoStart }: 
           <img
             src={capturedImage}
             alt="Selfie preview"
-            className="h-40 w-40 rounded-full object-cover border-2 border-primary sm:h-48 sm:w-48"
+            className={`h-40 w-40 rounded-full object-cover border-2 sm:h-48 sm:w-48 ${cameraError ? 'border-destructive' : confirmed ? 'border-primary' : 'border-muted'}`}
           />
+
+          {validating && (
+            <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> Verifying captured photo…
+            </span>
+          )}
+
           {cameraError && (
             <p className="text-sm text-destructive text-center max-w-xs">{cameraError}</p>
           )}
+
           {confirmed ? (
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium text-primary flex items-center gap-1">
@@ -210,20 +218,18 @@ export function SelfieCamera({ onPhotoConfirmed, currentAvatarUrl, autoStart }: 
                 <RotateCcw className="mr-2 h-4 w-4" /> Retake Selfie
               </Button>
             </div>
-          ) : (
+          ) : !validating ? (
             <div className="flex gap-2">
               <Button type="button" variant="outline" size="sm" onClick={retakePhoto}>
-                <RotateCcw className="mr-2 h-4 w-4" /> Retake Selfie
+                <RotateCcw className="mr-2 h-4 w-4" /> Retake
               </Button>
-              <Button type="button" size="sm" onClick={confirmPhoto} disabled={validating}>
-                {validating ? (
-                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verifying…</>
-                ) : (
-                  <><Check className="mr-2 h-4 w-4" /> Confirm Photo</>
-                )}
-              </Button>
+              {!cameraError && (
+                <Button type="button" size="sm" onClick={confirmPhoto}>
+                  <Check className="mr-2 h-4 w-4" /> Confirm Photo
+                </Button>
+              )}
             </div>
-          )}
+          ) : null}
         </>
       ) : (
         <>
