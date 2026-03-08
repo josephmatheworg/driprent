@@ -18,6 +18,7 @@ import MyFits from "./pages/MyFits";
 import Rentals from "./pages/Rentals";
 import Profile from "./pages/Profile";
 import Messages from "./pages/Messages";
+import HowItWorks from "./pages/HowItWorks";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
