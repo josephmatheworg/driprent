@@ -59,6 +59,7 @@ export default function ProfileSetup() {
   const [step, setStep] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
   const [confirmedPhoto, setConfirmedPhoto] = useState<string | null>(null);
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
 
   // Step 2 fields
   const [phone, setPhone] = useState('');
