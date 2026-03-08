@@ -15,8 +15,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Camera, MapPin, Star, RotateCcw, Check, Loader2 } from 'lucide-react';
 
+const GENDER_OPTIONS = ['Male', 'Female', 'Other', 'Prefer not to say'] as const;
+
 const profileSchema = z.object({
   username: z.string().trim().min(3, 'Username must be at least 3 characters').max(30, 'Username must be less than 30 characters').regex(/^[a-zA-Z0-9_]+$/, 'Only letters, numbers, and underscores allowed'),
+  gender: z.string().optional(),
   bio: z.string().trim().max(200, 'Bio must be less than 200 characters').optional(),
   phone: z.string().trim().regex(/^(\+?[\d]{10,15})?$/, 'Phone must be 10-15 digits, only numbers and + allowed').optional(),
   location: z.string().trim().min(1, 'Location is required').max(100, 'Location must be less than 100 characters'),
