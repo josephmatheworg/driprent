@@ -187,7 +187,7 @@ export function SelfieCamera({ onPhotoConfirmed, currentAvatarUrl, autoStart }: 
           </span>
 
           {/* Progress checklist */}
-          <ProgressChecklist currentStep={step} />
+          <ProgressChecklist currentStep={step} faceLocked={faceLocked} />
 
           <Button
             type="button"
