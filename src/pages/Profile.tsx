@@ -156,55 +156,55 @@ export default function Profile() {
       <div className="container mx-auto max-w-2xl px-4 py-8">
         <h1 className="font-display text-5xl text-foreground">PROFILE</h1>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="mt-8">
-          {/* Avatar Section */}
-          <div className="flex items-center gap-6">
-            <Avatar className="h-24 w-24">
-              <AvatarImage src={confirmedPhoto || profile.avatar_url || ''} />
-              <AvatarFallback className="text-2xl">
-                {profile.username?.charAt(0).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <h2 className="font-display text-2xl">{profile.username}</h2>
-              <div className="mt-1 flex items-center gap-4 text-sm text-muted-foreground">
-                {displayLocation && (
-                  <span className="flex items-center gap-1">
-                    <MapPin className="h-4 w-4" />
-                    {displayLocation}
-                  </span>
-                )}
-                {(profile.rating ?? 0) > 0 && (
-                  <span className="flex items-center gap-1">
-                    <Star className="h-4 w-4 fill-drip-gold text-drip-gold" />
-                    {(profile.rating ?? 0).toFixed(1)} ({profile.total_reviews} reviews)
-                  </span>
-                )}
-              </div>
+        {/* Avatar Section */}
+        <div className="mt-8 flex items-center gap-6">
+          <Avatar className="h-24 w-24">
+            <AvatarImage src={confirmedPhoto || profile.avatar_url || ''} />
+            <AvatarFallback className="text-2xl">
+              {profile.username?.charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <h2 className="font-display text-2xl">{profile.username}</h2>
+            <div className="mt-1 flex items-center gap-4 text-sm text-muted-foreground">
+              {displayLocation && (
+                <span className="flex items-center gap-1">
+                  <MapPin className="h-4 w-4" />
+                  {displayLocation}
+                </span>
+              )}
+              {(profile.rating ?? 0) > 0 && (
+                <span className="flex items-center gap-1">
+                  <Star className="h-4 w-4 fill-drip-gold text-drip-gold" />
+                  {(profile.rating ?? 0).toFixed(1)} ({profile.total_reviews} reviews)
+                </span>
+              )}
             </div>
           </div>
+        </div>
 
-          {/* Camera in edit mode */}
-          {isEditing && (
-            <div className="mt-4">
-              <SelfieCamera
-                onPhotoConfirmed={handlePhotoConfirmed}
-                currentAvatarUrl={profile.avatar_url}
-              />
-            </div>
-          )}
+        {/* Camera in edit mode */}
+        {isEditing && (
+          <div className="mt-4">
+            <SelfieCamera
+              onPhotoConfirmed={handlePhotoConfirmed}
+              currentAvatarUrl={profile.avatar_url}
+            />
+          </div>
+        )}
 
-          {/* Form Fields */}
-          <div className="mt-8 space-y-6">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <Label htmlFor="username">Username</Label>
-                <Input id="username" {...register('username')} disabled={!isEditing} className="mt-1.5" />
-                {errors.username && <p className="mt-1 text-sm text-destructive">{errors.username.message}</p>}
-              </div>
-              <div>
-                <Label htmlFor="gender">Gender</Label>
-                {isEditing ? (
+        {isEditing ? (
+          <form onSubmit={handleSubmit(onSubmit)}>
+            {/* Editable Fields */}
+            <div className="mt-8 space-y-6">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <Label htmlFor="username">Username</Label>
+                  <Input id="username" {...register('username')} className="mt-1.5" />
+                  {errors.username && <p className="mt-1 text-sm text-destructive">{errors.username.message}</p>}
+                </div>
+                <div>
+                  <Label htmlFor="gender">Gender</Label>
                   <Select onValueChange={(v) => setFormValue('gender', v)} defaultValue={profile.gender || ''}>
                     <SelectTrigger className="mt-1.5">
                       <SelectValue placeholder="Select gender" />
@@ -215,53 +215,85 @@ export default function Profile() {
                       ))}
                     </SelectContent>
                   </Select>
-                ) : (
-                  <Input value={profile.gender || 'Not set'} disabled className="mt-1.5" />
-                )}
+                </div>
               </div>
+
+              <div>
+                <Label htmlFor="phone">Phone</Label>
+                <Input id="phone" type="tel" placeholder="+91 9876543210" {...register('phone')} className="mt-1.5" />
+                {errors.phone && <p className="mt-1 text-sm text-destructive">{errors.phone.message}</p>}
+              </div>
+
+              <div>
+                <Label htmlFor="bio">Bio</Label>
+                <Textarea id="bio" placeholder="Tell others about yourself..." {...register('bio')} className="mt-1.5" maxLength={200} />
+                {errors.bio && <p className="mt-1 text-sm text-destructive">{errors.bio.message}</p>}
+              </div>
+
+              <LocationField
+                city={locationCity}
+                state={locationState}
+                country={locationCountry}
+                onCityChange={setLocationCity}
+                onStateChange={setLocationState}
+                onCountryChange={setLocationCountry}
+              />
             </div>
 
-            <div>
-              <Label htmlFor="phone">Phone</Label>
-              <Input id="phone" type="tel" placeholder="+91 9876543210" {...register('phone')} disabled={!isEditing} className="mt-1.5" />
-              {errors.phone && <p className="mt-1 text-sm text-destructive">{errors.phone.message}</p>}
+            {/* Edit Mode Actions */}
+            <div className="mt-8 flex gap-4">
+              <Button type="submit" disabled={isSaving}>
+                {isSaving ? 'Saving...' : 'Save Changes'}
+              </Button>
+              <Button type="button" variant="outline" onClick={cancelEdit}>
+                Cancel
+              </Button>
+            </div>
+          </form>
+        ) : (
+          <>
+            {/* Read-only Fields */}
+            <div className="mt-8 space-y-6">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <Label>Username</Label>
+                  <Input value={profile.username} disabled className="mt-1.5" />
+                </div>
+                <div>
+                  <Label>Gender</Label>
+                  <Input value={profile.gender || 'Not set'} disabled className="mt-1.5" />
+                </div>
+              </div>
+
+              <div>
+                <Label>Phone</Label>
+                <Input value={profile.phone || 'Not set'} disabled className="mt-1.5" />
+              </div>
+
+              <div>
+                <Label>Bio</Label>
+                <Textarea value={profile.bio || 'Not set'} disabled className="mt-1.5" />
+              </div>
+
+              <LocationField
+                city={profile.location_city || ''}
+                state={profile.location_state || ''}
+                country={profile.location_country || ''}
+                onCityChange={() => {}}
+                onStateChange={() => {}}
+                onCountryChange={() => {}}
+                disabled
+              />
             </div>
 
-            <div>
-              <Label htmlFor="bio">Bio</Label>
-              <Textarea id="bio" placeholder="Tell others about yourself..." {...register('bio')} disabled={!isEditing} className="mt-1.5" maxLength={200} />
-              {errors.bio && <p className="mt-1 text-sm text-destructive">{errors.bio.message}</p>}
-            </div>
-
-            <LocationField
-              city={isEditing ? locationCity : (profile.location_city || '')}
-              state={isEditing ? locationState : (profile.location_state || '')}
-              country={isEditing ? locationCountry : (profile.location_country || '')}
-              onCityChange={setLocationCity}
-              onStateChange={setLocationState}
-              onCountryChange={setLocationCountry}
-              disabled={!isEditing}
-            />
-          </div>
-
-          {/* Actions */}
-          <div className="mt-8 flex gap-4">
-            {isEditing ? (
-              <>
-                <Button type="submit" disabled={isSaving}>
-                  {isSaving ? 'Saving...' : 'Save Changes'}
-                </Button>
-                <Button type="button" variant="outline" onClick={cancelEdit}>
-                  Cancel
-                </Button>
-              </>
-            ) : (
+            {/* View Mode Action */}
+            <div className="mt-8">
               <Button type="button" onClick={enterEditMode}>
                 Edit Profile
               </Button>
-            )}
-          </div>
-        </form>
+            </div>
+          </>
+        )}
       </div>
     </Layout>
   );
