@@ -73,7 +73,7 @@ export function SelfieCamera({ onPhotoConfirmed, currentAvatarUrl, autoStart }: 
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [validating, setValidating] = useState(false);
 
-  const { step, resetLiveness } = useLivenessDetection(
+  const { step, resetLiveness, validateCapturedImage } = useLivenessDetection(
     videoRef as React.RefObject<HTMLVideoElement>,
     cameraActive
   );
