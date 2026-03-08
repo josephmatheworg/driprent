@@ -213,8 +213,12 @@ export function SelfieCamera({ onPhotoConfirmed, currentAvatarUrl, autoStart }: 
               <Button type="button" variant="outline" size="sm" onClick={retakePhoto}>
                 <RotateCcw className="mr-2 h-4 w-4" /> Retake Selfie
               </Button>
-              <Button type="button" size="sm" onClick={confirmPhoto}>
-                <Check className="mr-2 h-4 w-4" /> Confirm Photo
+              <Button type="button" size="sm" onClick={confirmPhoto} disabled={validating}>
+                {validating ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verifying…</>
+                ) : (
+                  <><Check className="mr-2 h-4 w-4" /> Confirm Photo</>
+                )}
               </Button>
             </div>
           )}
