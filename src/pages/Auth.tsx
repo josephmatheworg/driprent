@@ -39,7 +39,7 @@ export default function Auth() {
 
   useEffect(() => {
     if (user) {
-      navigate('/');
+      navigate('/home');
     }
   }, [user, navigate]);
 
@@ -68,7 +68,7 @@ export default function Auth() {
       });
     } else {
       toast({ title: 'Welcome back!' });
-      navigate('/');
+      navigate('/home');
     }
   };
 
