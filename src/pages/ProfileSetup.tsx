@@ -13,9 +13,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Camera, RotateCcw, Check } from 'lucide-react';
 
 const setupSchema = z.object({
-  username: z.string().trim().min(3, 'Username must be at least 3 characters').max(20),
-  bio: z.string().trim().min(1, 'Bio is required').max(300, 'Bio must be less than 300 characters'),
-  phone: z.string().trim().min(1, 'Phone number is required').regex(/^\+?[\d\s\-()]{7,20}$/, 'Invalid phone number format'),
+  username: z.string().trim().min(3, 'Username must be at least 3 characters').max(30, 'Username must be less than 30 characters').regex(/^[a-zA-Z0-9_]+$/, 'Only letters, numbers, and underscores allowed'),
+  bio: z.string().trim().min(1, 'Bio is required').max(200, 'Bio must be less than 200 characters'),
+  phone: z.string().trim().min(1, 'Phone number is required').regex(/^\+?[\d]{10,15}$/, 'Phone must be 10-15 digits, only numbers and + allowed'),
   location: z.string().trim().min(1, 'Location is required').max(100),
 });
 
