@@ -117,19 +117,29 @@ export function SelfieCamera({ onPhotoConfirmed, currentAvatarUrl, autoStart }: 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoStart]);
 
-  const capturePhoto = () => {
+  const capturePhoto = async () => {
     if (!videoRef.current || !canvasRef.current) return;
     const canvas = canvasRef.current;
     const video = videoRef.current;
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.drawImage(video, 0, 0);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-      setCapturedImage(dataUrl);
-      setConfirmed(false);
-      stopCamera();
+    if (!ctx) return;
+
+    ctx.drawImage(video, 0, 0);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+    setCapturedImage(dataUrl);
+    setConfirmed(false);
+    setCameraError(null);
+    stopCamera();
+
+    // Auto-validate the captured frame
+    setValidating(true);
+    const result = await validateCapturedImage(dataUrl);
+    setValidating(false);
+
+    if (!result.valid) {
+      setCameraError(result.error || 'Photo validation failed. Please retake.');
     }
   };
 
@@ -140,16 +150,8 @@ export function SelfieCamera({ onPhotoConfirmed, currentAvatarUrl, autoStart }: 
     startCamera();
   };
 
-  const confirmPhoto = async () => {
-    if (!capturedImage) return;
-    setValidating(true);
-    setCameraError(null);
-    const result = await validateCapturedImage(capturedImage);
-    setValidating(false);
-    if (!result.valid) {
-      setCameraError(result.error || 'Photo validation failed. Please retake.');
-      return;
-    }
+  const confirmPhoto = () => {
+    if (!capturedImage || cameraError || validating) return;
     setConfirmed(true);
     onPhotoConfirmed(capturedImage);
   };
@@ -194,11 +196,19 @@ export function SelfieCamera({ onPhotoConfirmed, currentAvatarUrl, autoStart }: 
           <img
             src={capturedImage}
             alt="Selfie preview"
-            className="h-40 w-40 rounded-full object-cover border-2 border-primary sm:h-48 sm:w-48"
+            className={`h-40 w-40 rounded-full object-cover border-2 sm:h-48 sm:w-48 ${cameraError ? 'border-destructive' : confirmed ? 'border-primary' : 'border-muted'}`}
           />
+
+          {validating && (
+            <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> Verifying captured photo…
+            </span>
+          )}
+
           {cameraError && (
             <p className="text-sm text-destructive text-center max-w-xs">{cameraError}</p>
           )}
+
           {confirmed ? (
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium text-primary flex items-center gap-1">
@@ -208,20 +218,18 @@ export function SelfieCamera({ onPhotoConfirmed, currentAvatarUrl, autoStart }: 
                 <RotateCcw className="mr-2 h-4 w-4" /> Retake Selfie
               </Button>
             </div>
-          ) : (
+          ) : !validating ? (
             <div className="flex gap-2">
               <Button type="button" variant="outline" size="sm" onClick={retakePhoto}>
-                <RotateCcw className="mr-2 h-4 w-4" /> Retake Selfie
+                <RotateCcw className="mr-2 h-4 w-4" /> Retake
               </Button>
-              <Button type="button" size="sm" onClick={confirmPhoto} disabled={validating}>
-                {validating ? (
-                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verifying…</>
-                ) : (
-                  <><Check className="mr-2 h-4 w-4" /> Confirm Photo</>
-                )}
-              </Button>
+              {!cameraError && (
+                <Button type="button" size="sm" onClick={confirmPhoto}>
+                  <Check className="mr-2 h-4 w-4" /> Confirm Photo
+                </Button>
+              )}
             </div>
-          )}
+          ) : null}
         </>
       ) : (
         <>
