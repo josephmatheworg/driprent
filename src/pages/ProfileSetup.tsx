@@ -45,6 +45,7 @@ export default function ProfileSetup() {
     resolver: zodResolver(setupSchema),
     defaultValues: {
       username: profile?.username || '',
+      gender: '',
       bio: '',
       phone: '',
       location: '',
