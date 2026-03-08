@@ -19,7 +19,7 @@ const STEP_CONFIG: Record<LivenessStep, { label: string; instruction: string; ic
   'turn-right': { label: 'Turn Right', instruction: 'Turn your head slightly to the right', icon: <MoveRight className="h-3.5 w-3.5" />, color: 'text-blue-700 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30', done: false },
   'move-closer': { label: 'Move Closer', instruction: 'Move slightly closer to the camera', icon: <Camera className="h-3.5 w-3.5" />, color: 'text-blue-700 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30', done: false },
   verified: { label: 'Verified', instruction: 'Verification successful! You can now capture your selfie.', icon: <Check className="h-3.5 w-3.5" />, color: 'text-green-700 bg-green-100 dark:text-green-400 dark:bg-green-900/30', done: true },
-  error: { label: 'Detection Error', instruction: 'Face detection unavailable. You may capture your selfie.', icon: <AlertTriangle className="h-3.5 w-3.5" />, color: 'text-muted-foreground bg-muted', done: true },
+  error: { label: 'Detection Error', instruction: 'Face verification could not start. Please refresh the page.', icon: <AlertTriangle className="h-3.5 w-3.5" />, color: 'text-destructive bg-destructive/10', done: false },
 };
 
 const ORDERED_STEPS: LivenessStep[] = ['face-detected', 'blink', 'turn-left', 'turn-right', 'move-closer'];
