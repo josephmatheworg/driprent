@@ -10,6 +10,9 @@ export interface Profile {
   avatar_url: string | null;
   bio: string | null;
   location: string | null;
+  location_city: string | null;
+  location_state: string | null;
+  location_country: string | null;
   phone: string | null;
   date_of_birth: string | null;
   gender: string | null;
