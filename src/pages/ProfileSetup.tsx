@@ -52,7 +52,7 @@ function clearDraft() {
 }
 
 export default function ProfileSetup() {
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile, refreshProfile, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
