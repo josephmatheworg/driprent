@@ -157,16 +157,16 @@ export default function Profile() {
         <h1 className="font-display text-5xl text-foreground">PROFILE</h1>
 
         {/* Avatar Section */}
-        <div className="mt-8 flex items-center gap-6">
-          <Avatar className="h-24 w-24">
+        <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:items-center sm:gap-6">
+          <Avatar className="h-20 w-20 sm:h-24 sm:w-24">
             <AvatarImage src={confirmedPhoto || profile.avatar_url || ''} />
             <AvatarFallback className="text-2xl">
               {profile.username?.charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
-          <div>
+          <div className="text-center sm:text-left">
             <h2 className="font-display text-2xl">{profile.username}</h2>
-            <div className="mt-1 flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="mt-1 flex flex-wrap items-center justify-center gap-3 text-sm text-muted-foreground sm:justify-start sm:gap-4">
               {displayLocation && (
                 <span className="flex items-center gap-1">
                   <MapPin className="h-4 w-4" />
