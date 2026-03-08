@@ -176,6 +176,9 @@ export function Navbar() {
                 <Link to="/profile" onClick={closeMobile} className="rounded-lg px-3 py-2.5 text-sm text-foreground hover:bg-accent flex items-center gap-2">
                   <User className="h-4 w-4" /> Profile
                 </Link>
+                <Link to="/edit-profile" onClick={closeMobile} className="rounded-lg px-3 py-2.5 text-sm text-foreground hover:bg-accent flex items-center gap-2">
+                  <Pencil className="h-4 w-4" /> Edit Profile
+                </Link>
                 <Link to="/my-fits" onClick={closeMobile} className="rounded-lg px-3 py-2.5 text-sm text-foreground hover:bg-accent flex items-center gap-2">
                   <Heart className="h-4 w-4" /> My Fits
                 </Link>
