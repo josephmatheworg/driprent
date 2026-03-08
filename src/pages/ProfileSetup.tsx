@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Camera, RotateCcw, Check } from 'lucide-react';
+import { Camera, RotateCcw, Check, MapPin, Loader2 } from 'lucide-react';
 
 const setupSchema = z.object({
   username: z.string().trim().min(3, 'Username must be at least 3 characters').max(30, 'Username must be less than 30 characters').regex(/^[a-zA-Z0-9_]+$/, 'Only letters, numbers, and underscores allowed'),
