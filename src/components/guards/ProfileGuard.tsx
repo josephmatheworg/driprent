@@ -24,7 +24,7 @@ export function ProfileGuard({ children }: ProfileGuardProps) {
   const isProfileComplete = profile &&
     profile.bio &&
     profile.phone &&
-    profile.location &&
+    (profile.location || profile.location_city) &&
     profile.avatar_url;
 
   if (!isProfileComplete) {
