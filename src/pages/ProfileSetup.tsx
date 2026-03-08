@@ -203,6 +203,7 @@ export default function ProfileSetup() {
         .from('profiles')
         .update({
           username: data.username,
+          gender: data.gender,
           bio: data.bio,
           phone: data.phone,
           location: data.location,
