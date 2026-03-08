@@ -12,8 +12,11 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Camera, RotateCcw, Check, MapPin, Loader2 } from 'lucide-react';
 
+const GENDER_OPTIONS = ['Male', 'Female', 'Other', 'Prefer not to say'] as const;
+
 const setupSchema = z.object({
   username: z.string().trim().min(3, 'Username must be at least 3 characters').max(30, 'Username must be less than 30 characters').regex(/^[a-zA-Z0-9_]+$/, 'Only letters, numbers, and underscores allowed'),
+  gender: z.string().min(1, 'Gender is required'),
   bio: z.string().trim().min(1, 'Bio is required').max(200, 'Bio must be less than 200 characters'),
   phone: z.string().trim().min(1, 'Phone number is required').regex(/^\+?[\d]{10,15}$/, 'Phone must be 10-15 digits, only numbers and + allowed'),
   location: z.string().trim().min(1, 'Location is required').max(100),
