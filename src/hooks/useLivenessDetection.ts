@@ -4,6 +4,7 @@ import { FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
 export type LivenessStep = 'loading' | 'no-face' | 'multiple-faces' | 'face-detected' | 'blink' | 'turn-left' | 'turn-right' | 'move-closer' | 'verified' | 'error';
 
 const MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task';
+const FACE_LOST_TIMEOUT_MS = 2000;
 
 // Eye landmark indices (MediaPipe 468 mesh)
 const LEFT_EYE_TOP = 159;
@@ -40,6 +41,7 @@ function getFaceSize(landmarks: any[]): number {
 export function useLivenessDetection(videoRef: React.RefObject<HTMLVideoElement>, active: boolean) {
   const [step, setStep] = useState<LivenessStep>('loading');
   const [faceCount, setFaceCount] = useState(0);
+  const [faceLocked, setFaceLocked] = useState(false);
   const landmarkerRef = useRef<FaceLandmarker | null>(null);
   const rafRef = useRef<number>(0);
 
@@ -53,6 +55,11 @@ export function useLivenessDetection(videoRef: React.RefObject<HTMLVideoElement>
   const closerDetectedRef = useRef(false);
   const stepRef = useRef<LivenessStep>('loading');
 
+  // Post-verification tracking
+  const verifiedFaceSizeRef = useRef<number | null>(null);
+  const verifiedFaceCenterRef = useRef<{ x: number; y: number } | null>(null);
+  const faceLostAtRef = useRef<number | null>(null);
+
   // Keep stepRef in sync
   useEffect(() => { stepRef.current = step; }, [step]);
 
@@ -64,6 +71,10 @@ export function useLivenessDetection(videoRef: React.RefObject<HTMLVideoElement>
     turnRightDetectedRef.current = false;
     baselineFaceSizeRef.current = null;
     closerDetectedRef.current = false;
+    verifiedFaceSizeRef.current = null;
+    verifiedFaceCenterRef.current = null;
+    faceLostAtRef.current = null;
+    setFaceLocked(false);
     setStep('loading');
   }, []);
 
@@ -110,7 +121,7 @@ export function useLivenessDetection(videoRef: React.RefObject<HTMLVideoElement>
     };
   }, [active, resetLiveness]);
 
-  // Detection loop
+  // Detection loop — continues even after 'verified' to monitor face presence
   useEffect(() => {
     if (!active || !landmarkerRef.current) return;
 
@@ -133,14 +144,80 @@ export function useLivenessDetection(videoRef: React.RefObject<HTMLVideoElement>
           setFaceCount(count);
 
           const currentStep = stepRef.current;
-
-          if (currentStep === 'verified' || currentStep === 'error') {
+          if (currentStep === 'error') {
             rafRef.current = requestAnimationFrame(detect);
             return;
           }
 
+          // --- Post-verification continuous monitoring ---
+          if (currentStep === 'verified') {
+            if (count !== 1) {
+              // Face lost or multiple faces after verification
+              if (!faceLostAtRef.current) {
+                faceLostAtRef.current = now;
+              } else if (now - faceLostAtRef.current > FACE_LOST_TIMEOUT_MS) {
+                // Reset after 2s of no face
+                resetLiveness();
+                setStep('no-face');
+                setFaceLocked(false);
+              }
+              rafRef.current = requestAnimationFrame(detect);
+              return;
+            }
+
+            // Face present — check consistency
+            faceLostAtRef.current = null;
+            const landmarks = result.faceLandmarks[0];
+            const size = getFaceSize(landmarks);
+            const nose = landmarks[NOSE_TIP];
+
+            // Store baseline on first verified frame
+            if (!verifiedFaceSizeRef.current) {
+              verifiedFaceSizeRef.current = size;
+              verifiedFaceCenterRef.current = { x: nose.x, y: nose.y };
+              setFaceLocked(true);
+            } else {
+              // Check for drastic size change (>40% difference = likely swapped to screen)
+              const sizeRatio = size / verifiedFaceSizeRef.current;
+              if (sizeRatio < 0.6 || sizeRatio > 1.6) {
+                resetLiveness();
+                setStep('no-face');
+                setFaceLocked(false);
+                rafRef.current = requestAnimationFrame(detect);
+                return;
+              }
+              // Check for drastic position change
+              const prev = verifiedFaceCenterRef.current!;
+              const dx = Math.abs(nose.x - prev.x);
+              const dy = Math.abs(nose.y - prev.y);
+              if (dx > 0.3 || dy > 0.3) {
+                resetLiveness();
+                setStep('no-face');
+                setFaceLocked(false);
+                rafRef.current = requestAnimationFrame(detect);
+                return;
+              }
+              // Update tracking smoothly
+              verifiedFaceSizeRef.current = verifiedFaceSizeRef.current * 0.8 + size * 0.2;
+              verifiedFaceCenterRef.current = {
+                x: prev.x * 0.8 + nose.x * 0.2,
+                y: prev.y * 0.8 + nose.y * 0.2,
+              };
+            }
+
+            rafRef.current = requestAnimationFrame(detect);
+            return;
+          }
+
+          // --- Pre-verification steps ---
           if (count === 0) {
-            setStep('no-face');
+            if (!faceLostAtRef.current) faceLostAtRef.current = now;
+            else if (now - faceLostAtRef.current > FACE_LOST_TIMEOUT_MS && currentStep !== 'no-face' && currentStep !== 'loading') {
+              resetLiveness();
+              setStep('no-face');
+            } else {
+              setStep('no-face');
+            }
             rafRef.current = requestAnimationFrame(detect);
             return;
           }
@@ -150,13 +227,13 @@ export function useLivenessDetection(videoRef: React.RefObject<HTMLVideoElement>
             return;
           }
 
+          faceLostAtRef.current = null;
           const landmarks = result.faceLandmarks[0];
 
           // Step 1: Face detected → move to blink
           if (currentStep === 'no-face' || currentStep === 'multiple-faces' || currentStep === 'face-detected') {
             if (currentStep !== 'face-detected') {
               setStep('face-detected');
-              // Auto-advance to blink after brief delay
               setTimeout(() => {
                 if (stepRef.current === 'face-detected') setStep('blink');
               }, 800);
@@ -170,7 +247,6 @@ export function useLivenessDetection(videoRef: React.RefObject<HTMLVideoElement>
             const leftEAR = eyeAspectRatio(landmarks, LEFT_EYE_TOP, LEFT_EYE_BOTTOM);
             const rightEAR = eyeAspectRatio(landmarks, RIGHT_EYE_TOP, RIGHT_EYE_BOTTOM);
             const avgEAR = (leftEAR + rightEAR) / 2;
-
             const BLINK_THRESHOLD = 0.015;
             if (avgEAR < BLINK_THRESHOLD && eyeWasOpenRef.current) {
               blinkCountRef.current += 1;
@@ -178,7 +254,6 @@ export function useLivenessDetection(videoRef: React.RefObject<HTMLVideoElement>
             } else if (avgEAR >= BLINK_THRESHOLD) {
               eyeWasOpenRef.current = true;
             }
-
             if (blinkCountRef.current >= 1) {
               setStep('turn-left');
               baselineYawRef.current = getYaw(landmarks);
@@ -225,7 +300,7 @@ export function useLivenessDetection(videoRef: React.RefObject<HTMLVideoElement>
 
     rafRef.current = requestAnimationFrame(detect);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [active, videoRef, step]);
+  }, [active, videoRef, step, resetLiveness]);
 
   /** Validate a captured image: 1 face, centered, ≥30% area, anti-spoof texture check */
   const validateCapturedImage = useCallback(async (dataUrl: string): Promise<{ valid: boolean; error?: string }> => {
@@ -283,7 +358,7 @@ export function useLivenessDetection(videoRef: React.RefObject<HTMLVideoElement>
     }
   }, []);
 
-  return { step, faceCount, resetLiveness, validateCapturedImage };
+  return { step, faceCount, faceLocked, resetLiveness, validateCapturedImage };
 }
 
 /**

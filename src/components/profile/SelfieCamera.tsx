@@ -30,22 +30,29 @@ function stepIndex(step: LivenessStep): number {
   return idx >= 0 ? idx : -1;
 }
 
-function ProgressChecklist({ currentStep }: { currentStep: LivenessStep }) {
+function ProgressChecklist({ currentStep, faceLocked }: { currentStep: LivenessStep; faceLocked: boolean }) {
   const current = stepIndex(currentStep);
   const items = [
     { label: 'Face Detected', idx: 0 },
     { label: 'Blink Verified', idx: 1 },
-    { label: 'Head Movement', idx: 2 }, // covers turn-left (2) and turn-right (3)
+    { label: 'Head Movement', idx: 2 },
     { label: 'Depth Check', idx: 4 },
+    { label: 'Face Locked', idx: 5 }, // post-verification continuous monitoring
   ];
 
   return (
     <div className="flex flex-col gap-1 text-xs w-full max-w-[220px]">
       {items.map((item) => {
-        // Head movement passes when turn-right is done (idx 3 complete → current > 3)
         const passIdx = item.label === 'Head Movement' ? 3 : item.idx;
-        const done = current > passIdx;
-        const active = !done && current >= item.idx && current <= (item.label === 'Head Movement' ? 3 : item.idx);
+        let done: boolean;
+        let active: boolean;
+        if (item.label === 'Face Locked') {
+          done = faceLocked;
+          active = currentStep === 'verified' && !faceLocked;
+        } else {
+          done = current > passIdx;
+          active = !done && current >= item.idx && current <= (item.label === 'Head Movement' ? 3 : item.idx);
+        }
         return (
           <div key={item.label} className={`flex items-center gap-2 rounded px-2 py-1 transition-colors ${done ? 'text-green-700 dark:text-green-400' : active ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
             {done ? (
@@ -73,12 +80,12 @@ export function SelfieCamera({ onPhotoConfirmed, currentAvatarUrl, autoStart }: 
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [validating, setValidating] = useState(false);
 
-  const { step, resetLiveness, validateCapturedImage } = useLivenessDetection(
+  const { step, faceLocked, resetLiveness, validateCapturedImage } = useLivenessDetection(
     videoRef as React.RefObject<HTMLVideoElement>,
     cameraActive
   );
 
-  const canCapture = step === 'verified';
+  const canCapture = step === 'verified' && faceLocked;
   const config = STEP_CONFIG[step];
 
   const startCamera = useCallback(async () => {
@@ -180,7 +187,7 @@ export function SelfieCamera({ onPhotoConfirmed, currentAvatarUrl, autoStart }: 
           </span>
 
           {/* Progress checklist */}
-          <ProgressChecklist currentStep={step} />
+          <ProgressChecklist currentStep={step} faceLocked={faceLocked} />
 
           <Button
             type="button"
