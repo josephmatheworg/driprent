@@ -3,6 +3,8 @@ import { FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
 
 export type LivenessStep = 'loading' | 'no-face' | 'multiple-faces' | 'face-detected' | 'blink' | 'turn-left' | 'turn-right' | 'move-closer' | 'verified' | 'error';
 
+const MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task';
+
 // Eye landmark indices (MediaPipe 468 mesh)
 const LEFT_EYE_TOP = 159;
 const LEFT_EYE_BOTTOM = 145;
