@@ -187,6 +187,6 @@ export default function ProfileSetup() {
           </div>
         </div>
       </div>
-    </div>
+    </BackgroundDecor>
   );
 }
