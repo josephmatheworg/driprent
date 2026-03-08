@@ -1,77 +1,137 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { SelfieCamera, dataURLtoBlob } from '@/components/profile/SelfieCamera';
 import { LocationField } from '@/components/profile/LocationField';
 import { BackgroundDecor } from '@/components/layout/BackgroundDecor';
+import { ArrowLeft, ArrowRight, Check, PartyPopper, Search } from 'lucide-react';
 
-const GENDER_OPTIONS = ['Male', 'Female', 'Other', 'Prefer not to say'] as const;
+const STORAGE_KEY = 'driprent_setup_draft';
+const TOTAL_STEPS = 4;
 
-const setupSchema = z.object({
-  username: z.string().trim().min(3, 'Username must be at least 3 characters').max(30, 'Username must be less than 30 characters').regex(/^[a-zA-Z0-9_]+$/, 'Only letters, numbers, and underscores allowed'),
-  gender: z.string().min(1, 'Gender is required'),
-  bio: z.string().trim().min(1, 'Bio is required').max(200, 'Bio must be less than 200 characters'),
-  phone: z.string().trim().min(1, 'Phone number is required').regex(/^\+?[\d]{10,15}$/, 'Phone must be 10-15 digits, only numbers and + allowed'),
-});
+interface DraftData {
+  phone: string;
+  locationCity: string;
+  locationState: string;
+  locationCountry: string;
+  bio: string;
+}
 
-type SetupFormData = z.infer<typeof setupSchema>;
+function loadDraft(): DraftData | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveDraft(data: DraftData) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function clearDraft() {
+  localStorage.removeItem(STORAGE_KEY);
+}
 
 export default function ProfileSetup() {
   const { user, profile, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const [step, setStep] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
   const [confirmedPhoto, setConfirmedPhoto] = useState<string | null>(null);
 
-  // Location state
+  // Step 2 fields
+  const [phone, setPhone] = useState('');
   const [locationCity, setLocationCity] = useState('');
   const [locationState, setLocationState] = useState('');
   const [locationCountry, setLocationCountry] = useState('');
 
-  const { register, handleSubmit, formState: { errors }, reset, setValue: setFormValue } = useForm<SetupFormData>({
-    resolver: zodResolver(setupSchema),
-    defaultValues: { username: '', gender: '', bio: '', phone: '' },
-  });
+  // Step 3 fields
+  const [bio, setBio] = useState('');
+
+  // Load draft on mount
+  useEffect(() => {
+    const draft = loadDraft();
+    if (draft) {
+      setPhone(draft.phone || '');
+      setLocationCity(draft.locationCity || '');
+      setLocationState(draft.locationState || '');
+      setLocationCountry(draft.locationCountry || '');
+      setBio(draft.bio || '');
+    }
+  }, []);
+
+  // Also populate from existing profile
+  useEffect(() => {
+    if (profile) {
+      if (!phone && profile.phone) setPhone(profile.phone);
+      if (!locationCity && profile.location_city) setLocationCity(profile.location_city);
+      if (!locationState && profile.location_state) setLocationState(profile.location_state);
+      if (!locationCountry && profile.location_country) setLocationCountry(profile.location_country);
+      if (!bio && profile.bio) setBio(profile.bio);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile]);
+
+  // Persist draft on field changes
+  useEffect(() => {
+    saveDraft({ phone, locationCity, locationState, locationCountry, bio });
+  }, [phone, locationCity, locationState, locationCountry, bio]);
 
   useEffect(() => {
     if (!user) navigate('/login');
   }, [user, navigate]);
 
-  useEffect(() => {
-    if (profile) {
-      reset({
-        username: profile.username || '',
-        gender: profile.gender || '',
-        bio: profile.bio || '',
-        phone: profile.phone || '',
-      });
-      setLocationCity(profile.location_city || '');
-      setLocationState(profile.location_state || '');
-      setLocationCountry(profile.location_country || '');
-    }
-  }, [profile, reset]);
+  const progressPercent = ((step - 1) / TOTAL_STEPS) * 100;
 
-  const onSubmit = async (data: SetupFormData) => {
-    if (!confirmedPhoto) {
-      toast({ variant: 'destructive', title: 'Photo required', description: 'Please capture and confirm your selfie.' });
-      return;
+  const validateStep = useCallback((): boolean => {
+    if (step === 1) {
+      if (!confirmedPhoto) {
+        toast({ variant: 'destructive', title: 'Photo required', description: 'Please capture and confirm your selfie.' });
+        return false;
+      }
+      return true;
     }
-    if (!locationCity.trim()) {
-      toast({ variant: 'destructive', title: 'Location required', description: 'Please enter at least a city.' });
-      return;
+    if (step === 2) {
+      if (!/^\+?[\d]{10,15}$/.test(phone.trim())) {
+        toast({ variant: 'destructive', title: 'Invalid phone', description: 'Phone must be 10-15 digits.' });
+        return false;
+      }
+      if (!locationCity.trim()) {
+        toast({ variant: 'destructive', title: 'Location required', description: 'Please enter at least a city.' });
+        return false;
+      }
+      return true;
     }
-    if (!profile || !user) return;
+    if (step === 3) {
+      if (!bio.trim() || bio.trim().length > 200) {
+        toast({ variant: 'destructive', title: 'Bio required', description: 'Write a short bio (1-200 characters).' });
+        return false;
+      }
+      return true;
+    }
+    return true;
+  }, [step, confirmedPhoto, phone, locationCity, bio, toast]);
 
+  const goNext = () => {
+    if (!validateStep()) return;
+    setStep((s) => Math.min(s + 1, TOTAL_STEPS));
+  };
+
+  const goBack = () => setStep((s) => Math.max(s - 1, 1));
+
+  const handleComplete = async () => {
+    if (!profile || !user || !confirmedPhoto) return;
     setIsSaving(true);
     try {
       const blob = dataURLtoBlob(confirmedPhoto);
@@ -87,10 +147,8 @@ export default function ProfileSetup() {
       const { error } = await supabase
         .from('profiles')
         .update({
-          username: data.username,
-          gender: data.gender,
-          bio: data.bio,
-          phone: data.phone,
+          bio: bio.trim(),
+          phone: phone.trim(),
           location,
           location_city: locationCity.trim(),
           location_state: locationState.trim(),
@@ -102,8 +160,8 @@ export default function ProfileSetup() {
       if (error) throw error;
 
       await refreshProfile();
-      toast({ title: 'Profile setup complete!' });
-      navigate('/home');
+      clearDraft();
+      setStep(5); // success screen
     } catch (error: any) {
       console.error('Profile setup error:', error);
       toast({ variant: 'destructive', title: 'Setup failed', description: error.message });
@@ -114,79 +172,166 @@ export default function ProfileSetup() {
 
   if (!user) return null;
 
+  // Step 5 = success
+  if (step === 5) {
+    return (
+      <BackgroundDecor>
+        <div className="container mx-auto flex min-h-screen items-center justify-center px-4 py-12">
+          <div className="w-full max-w-lg">
+            <div className="glass-card rounded-2xl p-6 shadow-soft-lg sm:p-8 text-center space-y-6">
+              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
+                <PartyPopper className="h-10 w-10 text-primary" />
+              </div>
+              <h1 className="font-display text-2xl text-foreground sm:text-3xl">Your profile is ready!</h1>
+              <p className="text-sm text-muted-foreground sm:text-base">You're all set to start browsing and renting outfits on DripRent.</p>
+              <Button variant="hero" size="lg" className="w-full" onClick={() => navigate('/browse')}>
+                <Search className="mr-2 h-4 w-4" /> Browse Fits
+              </Button>
+            </div>
+          </div>
+        </div>
+      </BackgroundDecor>
+    );
+  }
+
   return (
     <BackgroundDecor>
       <div className="container mx-auto flex min-h-screen items-center justify-center px-4 py-12">
         <div className="w-full max-w-lg">
           <div className="glass-card rounded-2xl p-6 shadow-soft-lg sm:p-8">
-            <div className="mb-8 text-center">
-              <h1 className="font-display text-3xl text-foreground sm:text-4xl">SET UP YOUR PROFILE</h1>
-              <p className="mt-2 text-sm text-muted-foreground sm:text-base">Complete your profile to access the platform</p>
+            {/* Progress indicator */}
+            <div className="mb-6 space-y-2">
+              <p className="text-sm font-medium text-muted-foreground text-center">
+                Step {step} of {TOTAL_STEPS}
+              </p>
+              <Progress value={progressPercent} className="h-2" />
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-              {/* Selfie Camera */}
-              <div>
-                <Label>Profile Selfie</Label>
-                <div className="mt-2">
-                  <SelfieCamera
-                    autoStart
-                    onPhotoConfirmed={setConfirmedPhoto}
-                    currentAvatarUrl={profile?.avatar_url}
+            <div className="mb-6 text-center">
+              <h1 className="font-display text-2xl text-foreground sm:text-3xl">
+                {step === 1 && 'Profile Photo'}
+                {step === 2 && 'Basic Information'}
+                {step === 3 && 'About You'}
+                {step === 4 && 'Review Profile'}
+              </h1>
+              <p className="mt-1 text-sm text-muted-foreground sm:text-base">
+                {step === 1 && 'Verify your face and capture a profile picture'}
+                {step === 2 && 'Add your phone number and location'}
+                {step === 3 && 'Write a short bio about yourself'}
+                {step === 4 && 'Review your info before completing setup'}
+              </p>
+            </div>
+
+            {/* Step 1 — Photo */}
+            {step === 1 && (
+              <div className="flex flex-col items-center">
+                <SelfieCamera
+                  autoStart
+                  onPhotoConfirmed={setConfirmedPhoto}
+                  currentAvatarUrl={profile?.avatar_url}
+                />
+              </div>
+            )}
+
+            {/* Step 2 — Phone & Location */}
+            {step === 2 && (
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="setup-phone">Phone Number</Label>
+                  <Input
+                    id="setup-phone"
+                    type="tel"
+                    placeholder="+91 9876543210"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="mt-1.5"
                   />
                 </div>
+                <LocationField
+                  city={locationCity}
+                  state={locationState}
+                  country={locationCountry}
+                  onCityChange={setLocationCity}
+                  onStateChange={setLocationState}
+                  onCountryChange={setLocationCountry}
+                />
               </div>
+            )}
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <Label htmlFor="setup-username">Username</Label>
-                  <Input id="setup-username" {...register('username')} className="mt-1.5" />
-                  {errors.username && <p className="mt-1 text-sm text-destructive">{errors.username.message}</p>}
-                </div>
-                <div>
-                  <Label htmlFor="setup-gender">Gender</Label>
-                  <Select onValueChange={(v) => setFormValue('gender', v)} defaultValue="">
-                    <SelectTrigger className="mt-1.5">
-                      <SelectValue placeholder="Select gender" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {GENDER_OPTIONS.map((g) => (
-                        <SelectItem key={g} value={g}>{g}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {errors.gender && <p className="mt-1 text-sm text-destructive">{errors.gender.message}</p>}
-                </div>
-              </div>
-
+            {/* Step 3 — Bio */}
+            {step === 3 && (
               <div>
                 <Label htmlFor="setup-bio">Bio</Label>
-                <Textarea id="setup-bio" placeholder="Tell us about yourself..." {...register('bio')} className="mt-1.5" maxLength={200} />
-                {errors.bio && <p className="mt-1 text-sm text-destructive">{errors.bio.message}</p>}
+                <Textarea
+                  id="setup-bio"
+                  placeholder="Tell us about yourself..."
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  className="mt-1.5"
+                  maxLength={200}
+                />
+                <p className="mt-1 text-xs text-muted-foreground text-right">{bio.length}/200</p>
               </div>
+            )}
 
-              <div>
-                <Label htmlFor="setup-phone">Phone Number</Label>
-                <Input id="setup-phone" type="tel" placeholder="+91 9876543210" {...register('phone')} className="mt-1.5" />
-                {errors.phone && <p className="mt-1 text-sm text-destructive">{errors.phone.message}</p>}
+            {/* Step 4 — Review */}
+            {step === 4 && (
+              <div className="space-y-4">
+                {confirmedPhoto && (
+                  <div className="flex justify-center">
+                    <img
+                      src={confirmedPhoto}
+                      alt="Your selfie"
+                      className="h-24 w-24 rounded-full object-cover border-2 border-primary sm:h-28 sm:w-28"
+                    />
+                  </div>
+                )}
+                <div className="divide-y divide-border rounded-lg border border-border">
+                  <ReviewRow label="Phone" value={phone} />
+                  <ReviewRow label="Location" value={[locationCity, locationState, locationCountry].filter(Boolean).join(', ')} />
+                  <ReviewRow label="Bio" value={bio} />
+                </div>
+                <p className="text-xs text-muted-foreground text-center">
+                  You can edit these details later from your profile page.
+                </p>
               </div>
+            )}
 
-              <LocationField
-                city={locationCity}
-                state={locationState}
-                country={locationCountry}
-                onCityChange={setLocationCity}
-                onStateChange={setLocationState}
-                onCountryChange={setLocationCountry}
-              />
-
-              <Button type="submit" variant="hero" className="mt-6 w-full" size="lg" disabled={isSaving}>
-                {isSaving ? 'Saving...' : 'Complete Setup'}
-              </Button>
-            </form>
+            {/* Navigation buttons */}
+            <div className="mt-6 flex items-center gap-3">
+              {step > 1 && (
+                <Button type="button" variant="outline" className="flex-1" onClick={goBack}>
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Back
+                </Button>
+              )}
+              {step < TOTAL_STEPS ? (
+                <Button type="button" variant="hero" className="flex-1" onClick={goNext}>
+                  Next <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="hero"
+                  className="flex-1"
+                  onClick={handleComplete}
+                  disabled={isSaving}
+                >
+                  {isSaving ? 'Saving...' : <><Check className="mr-2 h-4 w-4" /> Complete Setup</>}
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>
     </BackgroundDecor>
+  );
+}
+
+function ReviewRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col gap-0.5 px-4 py-3 sm:flex-row sm:items-center sm:gap-4">
+      <span className="text-xs font-medium text-muted-foreground sm:w-24 shrink-0">{label}</span>
+      <span className="text-sm text-foreground break-words">{value || '—'}</span>
+    </div>
   );
 }
