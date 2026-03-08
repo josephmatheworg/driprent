@@ -155,6 +155,26 @@
     box-shadow: var(--shadow-glow);
   }
 
+  /* Glassmorphism card */
+  .glass-card {
+    background: hsl(var(--card) / 0.65);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid hsl(var(--border) / 0.5);
+    box-shadow: 0 8px 32px -8px rgb(0 0 0 / 0.08), 0 2px 8px -2px rgb(0 0 0 / 0.04);
+  }
+
+  /* Enhanced soft shadows */
+  .shadow-soft-sm {
+    box-shadow: 0 2px 12px -2px rgb(0 0 0 / 0.06);
+  }
+  .shadow-soft-md {
+    box-shadow: 0 6px 24px -4px rgb(0 0 0 / 0.08);
+  }
+  .shadow-soft-lg {
+    box-shadow: 0 12px 40px -8px rgb(0 0 0 / 0.1);
+  }
+
   .animate-float {
     animation: float 6s ease-in-out infinite;
   }
