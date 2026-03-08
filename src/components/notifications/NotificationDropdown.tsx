@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Bell } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Bell, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -11,8 +11,10 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { getOrCreateConversation } from '@/hooks/useConversations';
 
 interface Notification {
   id: string;
@@ -31,8 +33,11 @@ interface NotificationDropdownProps {
 
 export function NotificationDropdown({ unreadCount, onRead }: NotificationDropdownProps) {
   const { profile } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [open, setOpen] = useState(false);
+  const [processingId, setProcessingId] = useState<string | null>(null);
 
   const fetchNotifications = async () => {
     if (!profile) return;
@@ -62,11 +67,73 @@ export function NotificationDropdown({ unreadCount, onRead }: NotificationDropdo
     onRead();
   };
 
+  const handleAcceptRequest = async (n: Notification) => {
+    if (!profile) return;
+    const rentalId = n.metadata?.rental_id as string;
+    const renterId = n.metadata?.renter_id as string;
+    if (!rentalId) return;
+
+    setProcessingId(n.id);
+
+    // Update rental status to confirmed
+    const { error } = await supabase
+      .from('rentals')
+      .update({ status: 'confirmed' })
+      .eq('id', rentalId);
+
+    if (error) {
+      toast({ variant: 'destructive', title: 'Failed to accept', description: error.message });
+      setProcessingId(null);
+      return;
+    }
+
+    // Create conversation between owner and renter
+    if (renterId) {
+      await getOrCreateConversation(profile.id, renterId);
+    }
+
+    // Mark this notification as read
+    await supabase.from('notifications').update({ read: true }).eq('id', n.id);
+
+    toast({ title: 'Request accepted', description: 'A conversation has been created.' });
+    setProcessingId(null);
+    fetchNotifications();
+    onRead();
+  };
+
+  const handleRejectRequest = async (n: Notification) => {
+    if (!profile) return;
+    const rentalId = n.metadata?.rental_id as string;
+    if (!rentalId) return;
+
+    setProcessingId(n.id);
+
+    const { error } = await supabase
+      .from('rentals')
+      .update({ status: 'cancelled' })
+      .eq('id', rentalId);
+
+    if (error) {
+      toast({ variant: 'destructive', title: 'Failed to reject', description: error.message });
+      setProcessingId(null);
+      return;
+    }
+
+    await supabase.from('notifications').update({ read: true }).eq('id', n.id);
+
+    toast({ title: 'Request rejected' });
+    setProcessingId(null);
+    fetchNotifications();
+    onRead();
+  };
+
   const getLink = (n: Notification) => {
     if (n.type === 'message') return '/messages';
-    if (n.type === 'rental_request' || n.type === 'rental_approved') return '/rentals';
+    if (n.type === 'rental_approved' || n.type === 'rental_rejected') return '/rentals';
     return '#';
   };
+
+  const isRentalRequest = (n: Notification) => n.type === 'rental_request' && !n.read;
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -89,28 +156,60 @@ export function NotificationDropdown({ unreadCount, onRead }: NotificationDropdo
             </button>
           )}
         </div>
-        <ScrollArea className="max-h-80">
+        <ScrollArea className="max-h-96">
           {notifications.length === 0 ? (
             <div className="px-3 py-6 text-center text-sm text-muted-foreground">
               No notifications yet
             </div>
           ) : (
             notifications.map((n) => (
-              <DropdownMenuItem key={n.id} asChild className="cursor-pointer">
-                <Link
-                  to={getLink(n)}
-                  className={cn(
-                    'flex flex-col gap-0.5 px-3 py-2.5',
-                    !n.read && 'bg-primary/5'
-                  )}
-                >
-                  <span className={cn('text-sm', !n.read && 'font-semibold')}>{n.title}</span>
-                  <span className="text-xs text-muted-foreground line-clamp-2">{n.message}</span>
-                  <span className="text-[10px] text-muted-foreground">
-                    {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
-                  </span>
-                </Link>
-              </DropdownMenuItem>
+              <div
+                key={n.id}
+                className={cn(
+                  'flex flex-col gap-1 px-3 py-2.5 border-b border-border last:border-0',
+                  !n.read && 'bg-primary/5'
+                )}
+              >
+                {isRentalRequest(n) ? (
+                  <>
+                    <span className="text-sm font-semibold">{n.title}</span>
+                    <span className="text-xs text-muted-foreground">{n.message}</span>
+                    <div className="mt-1.5 flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="terracotta"
+                        className="h-7 gap-1 text-xs"
+                        disabled={processingId === n.id}
+                        onClick={() => handleAcceptRequest(n)}
+                      >
+                        <Check className="h-3 w-3" /> Accept
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 gap-1 text-xs"
+                        disabled={processingId === n.id}
+                        onClick={() => handleRejectRequest(n)}
+                      >
+                        <X className="h-3 w-3" /> Reject
+                      </Button>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground">
+                      {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
+                    </span>
+                  </>
+                ) : (
+                  <DropdownMenuItem asChild className="cursor-pointer p-0">
+                    <Link to={getLink(n)} className="flex flex-col gap-0.5">
+                      <span className={cn('text-sm', !n.read && 'font-semibold')}>{n.title}</span>
+                      <span className="text-xs text-muted-foreground line-clamp-2">{n.message}</span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
+                      </span>
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+              </div>
             ))
           )}
         </ScrollArea>
