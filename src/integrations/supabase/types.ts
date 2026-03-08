@@ -265,6 +265,7 @@ export type Database = {
           location_country: string | null
           location_state: string | null
           phone: string | null
+          profile_completed: boolean
           rating: number | null
           total_reviews: number | null
           updated_at: string
@@ -284,6 +285,7 @@ export type Database = {
           location_country?: string | null
           location_state?: string | null
           phone?: string | null
+          profile_completed?: boolean
           rating?: number | null
           total_reviews?: number | null
           updated_at?: string
@@ -303,6 +305,7 @@ export type Database = {
           location_country?: string | null
           location_state?: string | null
           phone?: string | null
+          profile_completed?: boolean
           rating?: number | null
           total_reviews?: number | null
           updated_at?: string
