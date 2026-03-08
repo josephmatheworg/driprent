@@ -44,6 +44,7 @@ const App = () => (
             <Route path="/rentals" element={<ProfileGuard><Rentals /></ProfileGuard>} />
             <Route path="/profile" element={<ProfileGuard><Profile /></ProfileGuard>} />
             <Route path="/messages" element={<ProfileGuard><Messages /></ProfileGuard>} />
+            <Route path="/how-it-works" element={<HowItWorks />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
