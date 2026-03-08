@@ -3,11 +3,13 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send } from 'lucide-react';
+import { Send, Handshake } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMessages } from '@/hooks/useMessages';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
+import { ConfirmDealPanel } from '@/components/chat/ConfirmDealPanel';
 
 interface ChatWindowProps {
   conversationId: string;
@@ -19,10 +21,35 @@ export function ChatWindow({ conversationId, otherUser }: ChatWindowProps) {
   const { messages, loading, sendMessage } = useMessages(conversationId);
   const [text, setText] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
+  const [acceptedRental, setAcceptedRental] = useState<any>(null);
+  const [showConfirmDeal, setShowConfirmDeal] = useState(false);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Check if there's an accepted rental between the two users
+  useEffect(() => {
+    if (!profile) return;
+    const fetchAcceptedRental = async () => {
+      const { data } = await supabase
+        .from('rentals')
+        .select('id, fit_id, start_date, end_date, owner_id, fits(title)')
+        .or(`and(owner_id.eq.${profile.id},renter_id.eq.${otherUser.id}),and(owner_id.eq.${otherUser.id},renter_id.eq.${profile.id})`)
+        .eq('status', 'accepted' as any)
+        .limit(1)
+        .maybeSingle();
+      if (data) {
+        setAcceptedRental({
+          ...data,
+          fit_title: (data as any).fits?.title,
+        });
+      } else {
+        setAcceptedRental(null);
+      }
+    };
+    fetchAcceptedRental();
+  }, [profile?.id, otherUser.id, conversationId]);
 
   const handleSend = async () => {
     if (!text.trim()) return;
@@ -38,17 +65,31 @@ export function ChatWindow({ conversationId, otherUser }: ChatWindowProps) {
     }
   };
 
+  const isOwner = acceptedRental && profile && acceptedRental.owner_id === profile.id;
+
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-border px-4 py-3">
-        <Avatar className="h-8 w-8">
-          <AvatarImage src={otherUser.avatar_url || ''} />
-          <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-            {otherUser.username?.charAt(0).toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
-        <span className="font-medium text-foreground">{otherUser.username}</span>
+      <div className="flex items-center justify-between border-b border-border px-4 py-3">
+        <div className="flex items-center gap-3">
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={otherUser.avatar_url || ''} />
+            <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+              {otherUser.username?.charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <span className="font-medium text-foreground">{otherUser.username}</span>
+        </div>
+        {isOwner && acceptedRental && (
+          <Button
+            size="sm"
+            variant="terracotta"
+            className="gap-1.5"
+            onClick={() => setShowConfirmDeal(true)}
+          >
+            <Handshake className="h-4 w-4" /> Confirm Deal
+          </Button>
+        )}
       </div>
 
       {/* Messages */}
@@ -109,6 +150,16 @@ export function ChatWindow({ conversationId, otherUser }: ChatWindowProps) {
           </Button>
         </div>
       </div>
+
+      {/* Confirm Deal Dialog */}
+      {acceptedRental && (
+        <ConfirmDealPanel
+          open={showConfirmDeal}
+          onOpenChange={setShowConfirmDeal}
+          rental={acceptedRental}
+          onConfirmed={() => setAcceptedRental(null)}
+        />
+      )}
     </div>
   );
 }

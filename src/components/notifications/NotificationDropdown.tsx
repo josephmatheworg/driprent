@@ -75,10 +75,10 @@ export function NotificationDropdown({ unreadCount, onRead }: NotificationDropdo
 
     setProcessingId(n.id);
 
-    // Update rental status to confirmed
+    // Update rental status to accepted
     const { error } = await supabase
       .from('rentals')
-      .update({ status: 'confirmed' })
+      .update({ status: 'accepted' as any })
       .eq('id', rentalId);
 
     if (error) {

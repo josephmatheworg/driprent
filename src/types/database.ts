@@ -1,6 +1,6 @@
 export type FitCategory = 'dresses' | 'suits' | 'streetwear' | 'formal' | 'casual' | 'accessories' | 'shoes' | 'outerwear' | 'vintage' | 'designer';
 export type FitSize = 'XXS' | 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL' | '3XL';
-export type RentalStatus = 'pending' | 'confirmed' | 'active' | 'returned' | 'cancelled' | 'disputed';
+export type RentalStatus = 'pending' | 'accepted' | 'confirmed' | 'active' | 'returned' | 'cancelled' | 'disputed' | 'completed';
 
 export interface Profile {
   id: string;

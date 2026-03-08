@@ -406,6 +406,7 @@ export type Database = {
           id: string
           rating: number
           rental_id: string
+          review_tags: string[] | null
           review_type: string
           reviewed_fit_id: string | null
           reviewed_user_id: string | null
@@ -417,6 +418,7 @@ export type Database = {
           id?: string
           rating: number
           rental_id: string
+          review_tags?: string[] | null
           review_type: string
           reviewed_fit_id?: string | null
           reviewed_user_id?: string | null
@@ -428,6 +430,7 @@ export type Database = {
           id?: string
           rating?: number
           rental_id?: string
+          review_tags?: string[] | null
           review_type?: string
           reviewed_fit_id?: string | null
           reviewed_user_id?: string | null
@@ -524,6 +527,8 @@ export type Database = {
         | "returned"
         | "cancelled"
         | "disputed"
+        | "accepted"
+        | "completed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -672,6 +677,8 @@ export const Constants = {
         "returned",
         "cancelled",
         "disputed",
+        "accepted",
+        "completed",
       ],
     },
   },
