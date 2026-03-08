@@ -41,6 +41,7 @@ function getFaceSize(landmarks: any[]): number {
 export function useLivenessDetection(videoRef: React.RefObject<HTMLVideoElement>, active: boolean) {
   const [step, setStep] = useState<LivenessStep>('loading');
   const [faceCount, setFaceCount] = useState(0);
+  const [faceLocked, setFaceLocked] = useState(false);
   const landmarkerRef = useRef<FaceLandmarker | null>(null);
   const rafRef = useRef<number>(0);
 
@@ -54,6 +55,11 @@ export function useLivenessDetection(videoRef: React.RefObject<HTMLVideoElement>
   const closerDetectedRef = useRef(false);
   const stepRef = useRef<LivenessStep>('loading');
 
+  // Post-verification tracking
+  const verifiedFaceSizeRef = useRef<number | null>(null);
+  const verifiedFaceCenterRef = useRef<{ x: number; y: number } | null>(null);
+  const faceLostAtRef = useRef<number | null>(null);
+
   // Keep stepRef in sync
   useEffect(() => { stepRef.current = step; }, [step]);
 
@@ -65,6 +71,10 @@ export function useLivenessDetection(videoRef: React.RefObject<HTMLVideoElement>
     turnRightDetectedRef.current = false;
     baselineFaceSizeRef.current = null;
     closerDetectedRef.current = false;
+    verifiedFaceSizeRef.current = null;
+    verifiedFaceCenterRef.current = null;
+    faceLostAtRef.current = null;
+    setFaceLocked(false);
     setStep('loading');
   }, []);
 
