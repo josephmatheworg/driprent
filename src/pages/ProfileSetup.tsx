@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Camera, RotateCcw, Upload, ImagePlus } from 'lucide-react';
+import { Camera, RotateCcw, Check } from 'lucide-react';
 
 const setupSchema = z.object({
   username: z.string().trim().min(3, 'Username must be at least 3 characters').max(20),
@@ -30,12 +30,11 @@ export default function ProfileSetup() {
   // Camera state
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [confirmed, setConfirmed] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
   const { register, handleSubmit, formState: { errors }, reset } = useForm<SetupFormData>({
     resolver: zodResolver(setupSchema),
@@ -68,16 +67,21 @@ export default function ProfileSetup() {
     try {
       setCameraError(null);
       const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: 640, height: 480 },
+        video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
       });
       setStream(mediaStream);
       setCameraActive(true);
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-      }
+      // Use timeout to ensure videoRef is rendered
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = mediaStream;
+        }
+      }, 100);
     } catch (err) {
       console.error('Camera access error:', err);
-      setCameraError('Could not access camera. Please allow camera permissions or upload a photo instead.');
+      setCameraError(
+        'Could not access camera. Please allow camera permissions in your browser settings and reload this page.'
+      );
     }
   }, []);
 
@@ -89,6 +93,15 @@ export default function ProfileSetup() {
     setCameraActive(false);
   }, [stream]);
 
+  // Auto-start camera on mount
+  useEffect(() => {
+    if (user && !capturedImage && !cameraActive) {
+      startCamera();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (stream) {
@@ -108,38 +121,19 @@ export default function ProfileSetup() {
       ctx.drawImage(video, 0, 0);
       const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
       setCapturedImage(dataUrl);
-      setUploadedFile(null);
+      setConfirmed(false);
       stopCamera();
     }
   };
 
   const retakePhoto = () => {
     setCapturedImage(null);
-    setUploadedFile(null);
+    setConfirmed(false);
+    startCamera();
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      toast({ variant: 'destructive', title: 'Invalid file', description: 'Please upload an image file.' });
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      toast({ variant: 'destructive', title: 'File too large', description: 'Please upload an image under 5MB.' });
-      return;
-    }
-
-    setUploadedFile(file);
-    stopCamera();
-
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      setCapturedImage(ev.target?.result as string);
-    };
-    reader.readAsDataURL(file);
+  const confirmPhoto = () => {
+    setConfirmed(true);
   };
 
   const dataURLtoBlob = (dataurl: string): Blob => {
@@ -152,20 +146,19 @@ export default function ProfileSetup() {
   };
 
   const onSubmit = async (data: SetupFormData) => {
-    if (!capturedImage) {
-      toast({ variant: 'destructive', title: 'Photo required', description: 'Please upload or capture a profile photo.' });
+    if (!capturedImage || !confirmed) {
+      toast({ variant: 'destructive', title: 'Photo required', description: 'Please capture and confirm your selfie.' });
       return;
     }
     if (!profile || !user) return;
 
     setIsSaving(true);
     try {
-      const blob = uploadedFile || dataURLtoBlob(capturedImage);
-      const ext = uploadedFile ? uploadedFile.name.split('.').pop() || 'jpg' : 'jpg';
-      const fileName = `${user.id}/avatar.${ext}`;
+      const blob = dataURLtoBlob(capturedImage);
+      const fileName = `${user.id}/avatar.jpg`;
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(fileName, blob, { upsert: true, contentType: blob.type || 'image/jpeg' });
+        .upload(fileName, blob, { upsert: true, contentType: 'image/jpeg' });
       if (uploadError) throw uploadError;
 
       const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
@@ -177,7 +170,7 @@ export default function ProfileSetup() {
           bio: data.bio,
           phone: data.phone,
           location: data.location,
-          avatar_url: urlData.publicUrl,
+          avatar_url: `${urlData.publicUrl}?t=${Date.now()}`,
         })
         .eq('id', profile.id);
 
@@ -207,21 +200,39 @@ export default function ProfileSetup() {
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-              {/* Photo Section */}
+              {/* Photo Section — Selfie Camera Only */}
               <div>
-                <Label>Profile Picture</Label>
+                <Label>Profile Selfie</Label>
                 <div className="mt-2 flex flex-col items-center gap-3">
                   {capturedImage ? (
                     <>
                       <img
                         src={capturedImage}
-                        alt="Profile preview"
+                        alt="Selfie preview"
                         className="h-32 w-32 rounded-full object-cover border-2 border-primary sm:h-40 sm:w-40"
                       />
-                      <Button type="button" variant="outline" size="sm" onClick={retakePhoto}>
-                        <RotateCcw className="mr-2 h-4 w-4" />
-                        Change Photo
-                      </Button>
+                      {confirmed ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-primary flex items-center gap-1">
+                            <Check className="h-4 w-4" /> Photo confirmed
+                          </span>
+                          <Button type="button" variant="outline" size="sm" onClick={retakePhoto}>
+                            <RotateCcw className="mr-2 h-4 w-4" />
+                            Retake Selfie
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex gap-2">
+                          <Button type="button" variant="outline" size="sm" onClick={retakePhoto}>
+                            <RotateCcw className="mr-2 h-4 w-4" />
+                            Retake Selfie
+                          </Button>
+                          <Button type="button" size="sm" onClick={confirmPhoto}>
+                            <Check className="mr-2 h-4 w-4" />
+                            Confirm Photo
+                          </Button>
+                        </div>
+                      )}
                     </>
                   ) : cameraActive ? (
                     <>
@@ -234,32 +245,21 @@ export default function ProfileSetup() {
                       />
                       <Button type="button" variant="default" size="sm" onClick={capturePhoto}>
                         <Camera className="mr-2 h-4 w-4" />
-                        Capture
+                        Capture Selfie
                       </Button>
                     </>
                   ) : (
                     <>
                       <div className="flex h-32 w-32 items-center justify-center rounded-full bg-muted sm:h-40 sm:w-40">
-                        <ImagePlus className="h-10 w-10 text-muted-foreground" />
+                        <Camera className="h-10 w-10 text-muted-foreground" />
                       </div>
-                      {cameraError && <p className="text-sm text-destructive text-center">{cameraError}</p>}
-                      <div className="flex flex-col gap-2 sm:flex-row">
-                        <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
-                          <Upload className="mr-2 h-4 w-4" />
-                          Upload Photo
-                        </Button>
-                        <Button type="button" variant="outline" size="sm" onClick={startCamera}>
-                          <Camera className="mr-2 h-4 w-4" />
-                          Take Photo
-                        </Button>
-                      </div>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        onChange={handleFileUpload}
-                        className="hidden"
-                      />
+                      {cameraError && (
+                        <p className="text-sm text-destructive text-center max-w-xs">{cameraError}</p>
+                      )}
+                      <Button type="button" variant="outline" size="sm" onClick={startCamera}>
+                        <Camera className="mr-2 h-4 w-4" />
+                        Open Camera
+                      </Button>
                     </>
                   )}
                 </div>
