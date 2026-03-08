@@ -3,14 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { getOrCreateConversation } from '@/hooks/useConversations';
 import type { Rental, RentalStatus } from '@/types/database';
 import { format } from 'date-fns';
-import { Calendar, Package, CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react';
+import { Calendar, Package, CheckCircle, XCircle, Clock, AlertTriangle, MessageSquare } from 'lucide-react';
 
 const STATUS_CONFIG: Record<RentalStatus, { label: string; color: string; icon: React.ReactNode }> = {
   pending: { label: 'Pending', color: 'bg-yellow-100 text-yellow-800', icon: <Clock className="h-4 w-4" /> },
@@ -61,6 +62,8 @@ export default function Rentals() {
   };
 
   const updateRentalStatus = async (rentalId: string, status: RentalStatus) => {
+    const rental = rentals.find(r => r.id === rentalId);
+
     const { error } = await supabase
       .from('rentals')
       .update({ status })
@@ -72,17 +75,33 @@ export default function Rentals() {
         title: 'Update failed',
         description: error.message,
       });
-    } else {
-      toast({
-        title: 'Status updated',
-        description: `Rental has been ${status}.`,
-      });
-      fetchRentals();
+      return;
     }
+
+    // When accepting a rental, auto-create a conversation between owner and renter
+    if (status === 'confirmed' && rental && profile) {
+      await getOrCreateConversation(rental.owner_id, rental.renter_id);
+    }
+
+    toast({
+      title: 'Status updated',
+      description: `Rental has been ${status}.`,
+    });
+    fetchRentals();
+  };
+
+  const handleMessage = async (rental: Rental) => {
+    if (!profile) return;
+    const otherId = profile.id === rental.owner_id ? rental.renter_id : rental.owner_id;
+    const convoId = await getOrCreateConversation(profile.id, otherId);
+    if (convoId) navigate(`/messages?conversation=${convoId}`);
   };
 
   const myRentals = rentals.filter(r => r.renter_id === profile?.id);
   const myListings = rentals.filter(r => r.owner_id === profile?.id);
+
+  const canMessage = (rental: Rental) =>
+    rental.status === 'confirmed' || rental.status === 'active';
 
   const RentalCard = ({ rental, isOwner }: { rental: Rental; isOwner: boolean }) => {
     const statusConfig = STATUS_CONFIG[rental.status];
@@ -124,46 +143,55 @@ export default function Rentals() {
               </div>
             </div>
 
-            {isOwner && rental.status === 'pending' && (
-              <div className="mt-4 flex gap-2">
-                <Button
-                  size="sm"
-                  variant="terracotta"
-                  onClick={() => updateRentalStatus(rental.id, 'confirmed')}
-                >
-                  Accept
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => updateRentalStatus(rental.id, 'cancelled')}
-                >
-                  Decline
-                </Button>
-              </div>
-            )}
+            <div className="mt-4 flex flex-wrap gap-2">
+              {isOwner && rental.status === 'pending' && (
+                <>
+                  <Button
+                    size="sm"
+                    variant="terracotta"
+                    onClick={() => updateRentalStatus(rental.id, 'confirmed')}
+                  >
+                    Accept
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => updateRentalStatus(rental.id, 'cancelled')}
+                  >
+                    Decline
+                  </Button>
+                </>
+              )}
 
-            {isOwner && rental.status === 'confirmed' && (
-              <div className="mt-4">
+              {isOwner && rental.status === 'confirmed' && (
                 <Button
                   size="sm"
                   onClick={() => updateRentalStatus(rental.id, 'active')}
                 >
                   Mark as Active
                 </Button>
-              </div>
-            )}
+              )}
 
-            {rental.status === 'active' && (
-              <div className="mt-4">
+              {rental.status === 'active' && (
                 <Button
                   size="sm"
                   onClick={() => updateRentalStatus(rental.id, 'returned')}
                 >
                   Mark as Returned
                 </Button>
-              </div>
-            )}
+              )}
+
+              {canMessage(rental) && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5"
+                  onClick={() => handleMessage(rental)}
+                >
+                  <MessageSquare className="h-4 w-4" /> Message
+                </Button>
+              )}
+            </div>
           </CardContent>
         </div>
       </Card>

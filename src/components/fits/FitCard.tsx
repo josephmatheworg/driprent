@@ -1,12 +1,9 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Star, MessageSquare } from 'lucide-react';
+import { Star } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { getOrCreateConversation } from '@/hooks/useConversations';
-import { useToast } from '@/hooks/use-toast';
 import type { Fit } from '@/types/database';
 
 interface FitCardProps {
@@ -16,27 +13,6 @@ interface FitCardProps {
 export function FitCard({ fit }: FitCardProps) {
   const primaryImage = fit.images?.[0] || '/placeholder.svg';
   const { profile } = useAuth();
-  const navigate = useNavigate();
-  const { toast } = useToast();
-
-  const handleMessage = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!profile) {
-      navigate('/login');
-      return;
-    }
-    if (profile.id === fit.owner_id) {
-      toast({ title: "That's your own fit!", variant: 'destructive' });
-      return;
-    }
-    const convoId = await getOrCreateConversation(profile.id, fit.owner_id);
-    if (convoId) {
-      navigate(`/messages?conversation=${convoId}`);
-    }
-  };
-
-  const isOwner = profile?.id === fit.owner_id;
 
   return (
     <Link to={`/fit/${fit.id}`}>
@@ -55,14 +31,6 @@ export function FitCard({ fit }: FitCardProps) {
               <Badge variant="secondary" className="bg-background/90 backdrop-blur-sm">{fit.brand}</Badge>
             )}
           </div>
-
-          {!isOwner && (
-            <div className="absolute bottom-3 right-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-              <Button size="sm" variant="secondary" className="gap-1.5 shadow-md" onClick={handleMessage}>
-                <MessageSquare className="h-3.5 w-3.5" /> Message
-              </Button>
-            </div>
-          )}
 
           {!fit.is_available && (
             <div className="absolute inset-0 flex items-center justify-center bg-foreground/40">
