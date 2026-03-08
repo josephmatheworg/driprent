@@ -117,19 +117,29 @@ export function SelfieCamera({ onPhotoConfirmed, currentAvatarUrl, autoStart }: 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoStart]);
 
-  const capturePhoto = () => {
+  const capturePhoto = async () => {
     if (!videoRef.current || !canvasRef.current) return;
     const canvas = canvasRef.current;
     const video = videoRef.current;
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.drawImage(video, 0, 0);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-      setCapturedImage(dataUrl);
-      setConfirmed(false);
-      stopCamera();
+    if (!ctx) return;
+
+    ctx.drawImage(video, 0, 0);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+    setCapturedImage(dataUrl);
+    setConfirmed(false);
+    setCameraError(null);
+    stopCamera();
+
+    // Auto-validate the captured frame
+    setValidating(true);
+    const result = await validateCapturedImage(dataUrl);
+    setValidating(false);
+
+    if (!result.valid) {
+      setCameraError(result.error || 'Photo validation failed. Please retake.');
     }
   };
 
@@ -140,16 +150,8 @@ export function SelfieCamera({ onPhotoConfirmed, currentAvatarUrl, autoStart }: 
     startCamera();
   };
 
-  const confirmPhoto = async () => {
-    if (!capturedImage) return;
-    setValidating(true);
-    setCameraError(null);
-    const result = await validateCapturedImage(capturedImage);
-    setValidating(false);
-    if (!result.valid) {
-      setCameraError(result.error || 'Photo validation failed. Please retake.');
-      return;
-    }
+  const confirmPhoto = () => {
+    if (!capturedImage || cameraError || validating) return;
     setConfirmed(true);
     onPhotoConfirmed(capturedImage);
   };
