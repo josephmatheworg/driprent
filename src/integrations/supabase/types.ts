@@ -180,6 +180,9 @@ export type Database = {
           gender: string | null
           id: string
           location: string | null
+          location_city: string | null
+          location_country: string | null
+          location_state: string | null
           phone: string | null
           rating: number | null
           total_reviews: number | null
@@ -196,6 +199,9 @@ export type Database = {
           gender?: string | null
           id?: string
           location?: string | null
+          location_city?: string | null
+          location_country?: string | null
+          location_state?: string | null
           phone?: string | null
           rating?: number | null
           total_reviews?: number | null
@@ -212,6 +218,9 @@ export type Database = {
           gender?: string | null
           id?: string
           location?: string | null
+          location_city?: string | null
+          location_country?: string | null
+          location_state?: string | null
           phone?: string | null
           rating?: number | null
           total_reviews?: number | null
