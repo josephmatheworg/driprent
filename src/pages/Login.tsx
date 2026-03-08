@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { BackgroundDecor } from '@/components/layout/BackgroundDecor';
 
 const signInSchema = z.object({
   email: z.string().trim().email('Please enter a valid email'),
@@ -53,7 +54,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-hero-gradient">
+    <BackgroundDecor>
       <div className="container mx-auto flex min-h-screen items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
           <Link
@@ -64,7 +65,7 @@ export default function Login() {
             Back to home
           </Link>
 
-          <div className="rounded-2xl border border-border bg-card p-8 shadow-card">
+          <div className="glass-card rounded-2xl p-8 shadow-soft-lg">
             <div className="mb-8 text-center">
               <h1 className="font-display text-4xl text-foreground">WELCOME BACK</h1>
               <p className="mt-2 text-muted-foreground">Sign in to access your account</p>
@@ -105,6 +106,6 @@ export default function Login() {
           </div>
         </div>
       </div>
-    </div>
+    </BackgroundDecor>
   );
 }

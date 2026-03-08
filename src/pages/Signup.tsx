@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { BackgroundDecor } from '@/components/layout/BackgroundDecor';
 
 const signUpSchema = z.object({
   email: z.string().trim().email('Please enter a valid email'),
@@ -58,7 +59,7 @@ export default function Signup() {
   };
 
   return (
-    <div className="min-h-screen bg-hero-gradient">
+    <BackgroundDecor>
       <div className="container mx-auto flex min-h-screen items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
           <Link
@@ -69,7 +70,7 @@ export default function Signup() {
             Back to home
           </Link>
 
-          <div className="rounded-2xl border border-border bg-card p-8 shadow-card">
+          <div className="glass-card rounded-2xl p-8 shadow-soft-lg">
             <div className="mb-8 text-center">
               <h1 className="font-display text-4xl text-foreground">JOIN DRIP RENT</h1>
               <p className="mt-2 text-muted-foreground">Create an account to start renting and sharing fits</p>
@@ -118,6 +119,6 @@ export default function Signup() {
           </div>
         </div>
       </div>
-    </div>
+    </BackgroundDecor>
   );
 }

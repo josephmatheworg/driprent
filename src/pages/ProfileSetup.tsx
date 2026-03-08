@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { SelfieCamera, dataURLtoBlob } from '@/components/profile/SelfieCamera';
 import { LocationField } from '@/components/profile/LocationField';
+import { BackgroundDecor } from '@/components/layout/BackgroundDecor';
 
 const GENDER_OPTIONS = ['Male', 'Female', 'Other', 'Prefer not to say'] as const;
 
@@ -114,10 +115,10 @@ export default function ProfileSetup() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-hero-gradient">
+    <BackgroundDecor>
       <div className="container mx-auto flex min-h-screen items-center justify-center px-4 py-12">
         <div className="w-full max-w-lg">
-          <div className="rounded-2xl border border-border bg-card p-6 shadow-card sm:p-8">
+          <div className="glass-card rounded-2xl p-6 shadow-soft-lg sm:p-8">
             <div className="mb-8 text-center">
               <h1 className="font-display text-3xl text-foreground sm:text-4xl">SET UP YOUR PROFILE</h1>
               <p className="mt-2 text-sm text-muted-foreground sm:text-base">Complete your profile to access the platform</p>
@@ -186,6 +187,6 @@ export default function ProfileSetup() {
           </div>
         </div>
       </div>
-    </div>
+    </BackgroundDecor>
   );
 }
