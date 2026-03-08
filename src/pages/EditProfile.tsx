@@ -12,13 +12,13 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Camera, Upload, RotateCcw, ImagePlus } from 'lucide-react';
+import { Camera, Upload, RotateCcw, ImagePlus, MapPin, Loader2 } from 'lucide-react';
 
 const editSchema = z.object({
-  username: z.string().trim().min(3, 'Username must be at least 3 characters').max(20),
-  bio: z.string().trim().max(300, 'Bio must be less than 300 characters').optional(),
-  phone: z.string().trim().max(20).regex(/^(\+?[\d\s\-()]*)?$/, 'Invalid phone number').optional(),
-  location: z.string().trim().max(100).optional(),
+  username: z.string().trim().min(3, 'Username must be at least 3 characters').max(30, 'Username must be less than 30 characters').regex(/^[a-zA-Z0-9_]+$/, 'Only letters, numbers, and underscores allowed'),
+  bio: z.string().trim().max(200, 'Bio must be less than 200 characters').optional(),
+  phone: z.string().trim().regex(/^(\+?[\d]{10,15})?$/, 'Phone must be 10-15 digits, only numbers and + allowed').optional(),
+  location: z.string().trim().min(1, 'Location is required').max(100),
 });
 
 type EditFormData = z.infer<typeof editSchema>;
@@ -40,9 +40,40 @@ export default function EditProfile() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [photoChanged, setPhotoChanged] = useState(false);
 
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<EditFormData>({
+  const [geoLoading, setGeoLoading] = useState(false);
+
+  const { register, handleSubmit, formState: { errors }, reset, setValue: setFormValue } = useForm<EditFormData>({
     resolver: zodResolver(editSchema),
   });
+
+  const handleUseCurrentLocation = async () => {
+    if (!navigator.geolocation) {
+      toast({ variant: 'destructive', title: 'Geolocation not supported', description: 'Your browser does not support location detection.' });
+      return;
+    }
+    setGeoLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${position.coords.latitude}&lon=${position.coords.longitude}&format=json`);
+          const data = await res.json();
+          const city = data.address?.city || data.address?.town || data.address?.village || '';
+          const state = data.address?.state || '';
+          const country = data.address?.country || '';
+          const location = [city, state, country].filter(Boolean).join(', ');
+          setFormValue('location', location);
+        } catch {
+          toast({ variant: 'destructive', title: 'Location failed', description: 'Could not detect your location.' });
+        } finally {
+          setGeoLoading(false);
+        }
+      },
+      () => {
+        toast({ variant: 'destructive', title: 'Location denied', description: 'Please allow location access or enter manually.' });
+        setGeoLoading(false);
+      }
+    );
+  };
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
@@ -267,7 +298,12 @@ export default function EditProfile() {
               </div>
               <div>
                 <Label htmlFor="edit-location">Location</Label>
-                <Input id="edit-location" placeholder="City, Country" {...register('location')} className="mt-1.5" />
+                <div className="mt-1.5 flex gap-2">
+                  <Input id="edit-location" placeholder="City, Country" {...register('location')} className="flex-1" />
+                  <Button type="button" variant="outline" size="icon" className="shrink-0" onClick={handleUseCurrentLocation} disabled={geoLoading}>
+                    {geoLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />}
+                  </Button>
+                </div>
                 {errors.location && <p className="mt-1 text-sm text-destructive">{errors.location.message}</p>}
               </div>
             </div>

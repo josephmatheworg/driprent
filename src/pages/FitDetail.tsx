@@ -234,8 +234,8 @@ export default function FitDetail() {
 
             <div className="mt-4 flex items-center gap-4">
               <div>
-                <span className="text-3xl font-bold text-foreground">${fit.daily_price}</span>
-                <span className="text-muted-foreground">/day</span>
+                <span className="text-3xl font-bold text-foreground">₹{fit.daily_price}</span>
+                <span className="text-muted-foreground"> / day</span>
               </div>
               {fit.rating > 0 && (
                 <div className="flex items-center gap-1">
@@ -248,7 +248,7 @@ export default function FitDetail() {
 
             {fit.deposit_amount > 0 && (
               <p className="mt-2 text-sm text-muted-foreground">
-                + ${fit.deposit_amount} refundable deposit
+                + ₹{fit.deposit_amount} refundable deposit
               </p>
             )}
 
@@ -315,21 +315,21 @@ export default function FitDetail() {
                 {totals && (
                   <div className="mt-6 space-y-2 border-t border-border pt-4">
                     <div className="flex justify-between text-sm">
-                      <span>${fit.daily_price} x {totals.days} days</span>
-                      <span>${totals.rentalFee.toFixed(2)}</span>
+                      <span>₹{fit.daily_price} x {totals.days} days</span>
+                      <span>₹{totals.rentalFee.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span>Service fee (10%)</span>
-                      <span>${totals.serviceFee.toFixed(2)}</span>
+                      <span>₹{totals.serviceFee.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span>Refundable deposit</span>
-                      <span>${totals.deposit.toFixed(2)}</span>
+                      <span>₹{totals.deposit.toFixed(2)}</span>
                     </div>
                     <Separator />
                     <div className="flex justify-between font-semibold">
                       <span>Total</span>
-                      <span>${totals.total.toFixed(2)}</span>
+                      <span>₹{totals.total.toFixed(2)}</span>
                     </div>
                   </div>
                 )}

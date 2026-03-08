@@ -10,12 +10,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Camera, RotateCcw, Check } from 'lucide-react';
+import { Camera, RotateCcw, Check, MapPin, Loader2 } from 'lucide-react';
 
 const setupSchema = z.object({
-  username: z.string().trim().min(3, 'Username must be at least 3 characters').max(20),
-  bio: z.string().trim().min(1, 'Bio is required').max(300, 'Bio must be less than 300 characters'),
-  phone: z.string().trim().min(1, 'Phone number is required').regex(/^\+?[\d\s\-()]{7,20}$/, 'Invalid phone number format'),
+  username: z.string().trim().min(3, 'Username must be at least 3 characters').max(30, 'Username must be less than 30 characters').regex(/^[a-zA-Z0-9_]+$/, 'Only letters, numbers, and underscores allowed'),
+  bio: z.string().trim().min(1, 'Bio is required').max(200, 'Bio must be less than 200 characters'),
+  phone: z.string().trim().min(1, 'Phone number is required').regex(/^\+?[\d]{10,15}$/, 'Phone must be 10-15 digits, only numbers and + allowed'),
   location: z.string().trim().min(1, 'Location is required').max(100),
 });
 
@@ -36,7 +36,9 @@ export default function ProfileSetup() {
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
 
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<SetupFormData>({
+  const [geoLoading, setGeoLoading] = useState(false);
+
+  const { register, handleSubmit, formState: { errors }, reset, setValue: setFormValue } = useForm<SetupFormData>({
     resolver: zodResolver(setupSchema),
     defaultValues: {
       username: profile?.username || '',
@@ -62,6 +64,35 @@ export default function ProfileSetup() {
       });
     }
   }, [profile, reset]);
+
+  const handleUseCurrentLocation = async () => {
+    if (!navigator.geolocation) {
+      toast({ variant: 'destructive', title: 'Geolocation not supported', description: 'Your browser does not support location detection.' });
+      return;
+    }
+    setGeoLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${position.coords.latitude}&lon=${position.coords.longitude}&format=json`);
+          const data = await res.json();
+          const city = data.address?.city || data.address?.town || data.address?.village || '';
+          const state = data.address?.state || '';
+          const country = data.address?.country || '';
+          const location = [city, state, country].filter(Boolean).join(', ');
+          setFormValue('location', location);
+        } catch {
+          toast({ variant: 'destructive', title: 'Location failed', description: 'Could not detect your location.' });
+        } finally {
+          setGeoLoading(false);
+        }
+      },
+      () => {
+        toast({ variant: 'destructive', title: 'Location denied', description: 'Please allow location access or enter manually.' });
+        setGeoLoading(false);
+      }
+    );
+  };
 
   const startCamera = useCallback(async () => {
     try {
@@ -286,7 +317,12 @@ export default function ProfileSetup() {
 
               <div>
                 <Label htmlFor="setup-location">Location</Label>
-                <Input id="setup-location" placeholder="City, Country" {...register('location')} className="mt-1.5" />
+                <div className="mt-1.5 flex gap-2">
+                  <Input id="setup-location" placeholder="City, Country" {...register('location')} className="flex-1" />
+                  <Button type="button" variant="outline" size="icon" className="shrink-0" onClick={handleUseCurrentLocation} disabled={geoLoading}>
+                    {geoLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />}
+                  </Button>
+                </div>
                 {errors.location && <p className="mt-1 text-sm text-destructive">{errors.location.message}</p>}
               </div>
 

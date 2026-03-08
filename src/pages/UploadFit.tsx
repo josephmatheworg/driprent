@@ -22,14 +22,14 @@ import { CATEGORIES, SIZES, type FitCategory, type FitSize } from '@/types/datab
 import { Upload, X, ImagePlus } from 'lucide-react';
 
 const uploadSchema = z.object({
-  title: z.string().trim().min(3, 'Title must be at least 3 characters').max(100, 'Title must be less than 100 characters'),
-  description: z.string().trim().max(1000, 'Description must be less than 1000 characters').optional(),
+  title: z.string().trim().min(3, 'Title must be at least 3 characters').max(80, 'Title must be less than 80 characters'),
+  description: z.string().trim().max(500, 'Description must be less than 500 characters').optional(),
   category: z.enum(['dresses', 'suits', 'streetwear', 'formal', 'casual', 'accessories', 'shoes', 'outerwear', 'vintage', 'designer']),
   size: z.enum(['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL']),
   brand: z.string().trim().max(50, 'Brand must be less than 50 characters').optional(),
   color: z.string().trim().max(30, 'Color must be less than 30 characters').optional(),
-  daily_price: z.number().min(1, 'Price must be at least $1').max(10000, 'Price must be less than $10,000'),
-  deposit_amount: z.number().min(0, 'Deposit cannot be negative').max(10000, 'Deposit must be less than $10,000'),
+  daily_price: z.number().min(50, 'Price must be at least ₹50').max(10000, 'Price must be less than ₹10,000'),
+  deposit_amount: z.number().min(0, 'Deposit cannot be negative').max(10000, 'Deposit must be less than ₹10,000'),
   condition: z.string().trim().optional(),
   care_instructions: z.string().trim().max(500, 'Care instructions must be less than 500 characters').optional(),
 });
@@ -333,13 +333,13 @@ export default function UploadFit() {
             <h3 className="font-display text-2xl">PRICING</h3>
             <div className="mt-4 grid gap-6 md:grid-cols-2">
               <div>
-                <Label htmlFor="daily_price">Daily Rental Price ($)</Label>
+                <Label htmlFor="daily_price">Daily Rental Price (₹)</Label>
                 <Input
                   id="daily_price"
                   type="number"
-                  min="1"
+                  min="50"
                   step="1"
-                  placeholder="50"
+                  placeholder="500"
                   {...register('daily_price', { valueAsNumber: true })}
                   className="mt-1.5"
                 />
@@ -349,7 +349,7 @@ export default function UploadFit() {
               </div>
 
               <div>
-                <Label htmlFor="deposit_amount">Security Deposit ($)</Label>
+                <Label htmlFor="deposit_amount">Security Deposit (₹)</Label>
                 <Input
                   id="deposit_amount"
                   type="number"
