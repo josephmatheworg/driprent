@@ -10,12 +10,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { User, Heart, Package, LogOut, Bell, Menu, X } from 'lucide-react';
+import { NotificationDropdown } from '@/components/notifications/NotificationDropdown';
+import { useUnreadCounts } from '@/hooks/useUnreadCounts';
+import { User, Heart, Package, LogOut, MessageSquare, Menu, X } from 'lucide-react';
 
 export function Navbar() {
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { unreadMessages, unreadNotifications, refetch } = useUnreadCounts();
 
   const handleSignOut = async () => {
     await signOut();
@@ -33,29 +36,32 @@ export function Navbar() {
 
         {/* Desktop nav links */}
         <div className="hidden items-center gap-8 md:flex">
-          <Link
-            to="/browse"
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-          >
+          <Link to="/browse" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
             Browse Fits
           </Link>
-          <Link
-            to="/how-it-works"
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-          >
+          <Link to="/how-it-works" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
             How It Works
           </Link>
         </div>
 
         {/* Desktop right side */}
-        <div className="hidden items-center gap-4 md:flex">
+        <div className="hidden items-center gap-2 md:flex">
           {user ? (
             <>
-              <Button variant="ghost" size="icon" asChild>
-                <Link to="/notifications">
-                  <Bell className="h-5 w-5" />
+              {/* Messages */}
+              <Button variant="ghost" size="icon" asChild className="relative">
+                <Link to="/messages">
+                  <MessageSquare className="h-5 w-5" />
+                  {unreadMessages > 0 && (
+                    <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
+                      {unreadMessages > 9 ? '9+' : unreadMessages}
+                    </span>
+                  )}
                 </Link>
               </Button>
+
+              {/* Notifications */}
+              <NotificationDropdown unreadCount={unreadNotifications} onRead={refetch} />
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -82,26 +88,22 @@ export function Navbar() {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
                     <Link to="/profile" className="flex cursor-pointer items-center">
-                      <User className="mr-2 h-4 w-4" />
-                      Profile
+                      <User className="mr-2 h-4 w-4" /> Profile
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link to="/my-fits" className="flex cursor-pointer items-center">
-                      <Heart className="mr-2 h-4 w-4" />
-                      My Fits
+                      <Heart className="mr-2 h-4 w-4" /> My Fits
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link to="/rentals" className="flex cursor-pointer items-center">
-                      <Package className="mr-2 h-4 w-4" />
-                      Rentals
+                      <Package className="mr-2 h-4 w-4" /> Rentals
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Sign Out
+                    <LogOut className="mr-2 h-4 w-4" /> Sign Out
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -121,11 +123,19 @@ export function Navbar() {
         {/* Mobile hamburger */}
         <div className="flex items-center gap-2 md:hidden">
           {user && (
-            <Button variant="ghost" size="icon" asChild>
-              <Link to="/notifications">
-                <Bell className="h-5 w-5" />
-              </Link>
-            </Button>
+            <>
+              <Button variant="ghost" size="icon" asChild className="relative">
+                <Link to="/messages">
+                  <MessageSquare className="h-5 w-5" />
+                  {unreadMessages > 0 && (
+                    <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
+                      {unreadMessages > 9 ? '9+' : unreadMessages}
+                    </span>
+                  )}
+                </Link>
+              </Button>
+              <NotificationDropdown unreadCount={unreadNotifications} onRead={refetch} />
+            </>
           )}
           <Button variant="ghost" size="icon" onClick={() => setMobileOpen(!mobileOpen)}>
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -137,18 +147,10 @@ export function Navbar() {
       {mobileOpen && (
         <div className="border-t border-border bg-background px-4 pb-4 pt-2 md:hidden animate-fade-up">
           <div className="flex flex-col gap-1">
-            <Link
-              to="/browse"
-              onClick={closeMobile}
-              className="rounded-lg px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
-            >
+            <Link to="/browse" onClick={closeMobile} className="rounded-lg px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent">
               Browse Fits
             </Link>
-            <Link
-              to="/how-it-works"
-              onClick={closeMobile}
-              className="rounded-lg px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
-            >
+            <Link to="/how-it-works" onClick={closeMobile} className="rounded-lg px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent">
               How It Works
             </Link>
 
@@ -169,6 +171,14 @@ export function Navbar() {
                 </div>
                 <Link to="/profile" onClick={closeMobile} className="rounded-lg px-3 py-2.5 text-sm text-foreground hover:bg-accent flex items-center gap-2">
                   <User className="h-4 w-4" /> Profile
+                </Link>
+                <Link to="/messages" onClick={closeMobile} className="rounded-lg px-3 py-2.5 text-sm text-foreground hover:bg-accent flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4" /> Messages
+                  {unreadMessages > 0 && (
+                    <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
+                      {unreadMessages}
+                    </span>
+                  )}
                 </Link>
                 <Link to="/my-fits" onClick={closeMobile} className="rounded-lg px-3 py-2.5 text-sm text-foreground hover:bg-accent flex items-center gap-2">
                   <Heart className="h-4 w-4" /> My Fits

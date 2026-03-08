@@ -10,8 +10,9 @@ import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { getOrCreateConversation } from '@/hooks/useConversations';
 import type { Fit } from '@/types/database';
-import { Star, ChevronLeft, ChevronRight, Shield, MapPin, Package, Calendar as CalendarIcon } from 'lucide-react';
+import { Star, ChevronLeft, ChevronRight, Shield, MapPin, Package, Calendar as CalendarIcon, MessageSquare } from 'lucide-react';
 import { format, differenceInDays, addDays } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 
@@ -256,7 +257,7 @@ export default function FitDetail() {
 
             {/* Owner Info */}
             {fit.owner && (
-              <Link to={`/user/${fit.owner.id}`} className="flex items-center gap-4 rounded-xl bg-card p-4 transition-colors hover:bg-accent">
+              <div className="flex items-center gap-4 rounded-xl bg-card p-4">
                 <Avatar className="h-12 w-12">
                   <AvatarImage src={fit.owner.avatar_url || ''} />
                   <AvatarFallback>{fit.owner.username?.charAt(0).toUpperCase()}</AvatarFallback>
@@ -278,7 +279,20 @@ export default function FitDetail() {
                     )}
                   </div>
                 </div>
-              </Link>
+                {profile && profile.id !== fit.owner_id && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={async () => {
+                      const convoId = await getOrCreateConversation(profile.id, fit.owner_id);
+                      if (convoId) navigate(`/messages?conversation=${convoId}`);
+                    }}
+                  >
+                    <MessageSquare className="h-4 w-4" /> Message
+                  </Button>
+                )}
+              </div>
             )}
 
             <Separator className="my-6" />
