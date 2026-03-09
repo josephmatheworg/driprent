@@ -222,37 +222,43 @@ export default function Browse() {
         )}
 
         {/* Results */}
-        {loading ? (
+        {loading && !imageSearchResults ? (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="aspect-[3/4] animate-pulse rounded-2xl bg-muted" />
             ))}
           </div>
-        ) : fits.length === 0 ? (
+        ) : displayFits.length === 0 ? (
           <div className="py-20 text-center">
             <h3 className="font-display text-3xl text-foreground">NO FITS FOUND</h3>
             <p className="mt-2 text-muted-foreground">
-              Try adjusting your filters or search terms
+              {imageSearchResults ? 'No similar outfits found. Try a different photo.' : 'Try adjusting your filters or search terms'}
             </p>
-            {hasActiveFilters && (
-              <Button variant="outline" onClick={clearFilters} className="mt-4">
-                Clear Filters
+            {(hasActiveFilters || imageSearchResults) && (
+              <Button variant="outline" onClick={imageSearchResults ? clearImageSearch : clearFilters} className="mt-4">
+                {imageSearchResults ? 'Clear Photo Search' : 'Clear Filters'}
               </Button>
             )}
           </div>
         ) : (
           <>
             <p className="mb-4 text-sm text-muted-foreground">
-              {fits.length} fit{fits.length !== 1 ? 's' : ''} found
+              {displayFits.length} fit{displayFits.length !== 1 ? 's' : ''} found
             </p>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {fits.map((fit) => (
+              {displayFits.map((fit) => (
                 <FitCard key={fit.id} fit={fit} />
               ))}
             </div>
           </>
         )}
       </div>
+
+      <ImageSearchModal
+        open={imageSearchOpen}
+        onOpenChange={setImageSearchOpen}
+        onResults={handleImageSearchResults}
+      />
     </Layout>
   );
 }

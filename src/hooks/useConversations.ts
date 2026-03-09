@@ -112,11 +112,20 @@ export function useConversations() {
   const deleteConversation = async (conversationId: string) => {
     if (!profile) return false;
 
-    // Add current user to deleted_by_users array
-    const { error } = await supabase.rpc('delete_conversation_for_user', {
-      _conversation_id: conversationId,
-      _user_id: profile.id
-    });
+    // Get current deleted_by_users and append current user
+    const { data: conv } = await supabase
+      .from('conversations')
+      .select('deleted_by_users')
+      .eq('id', conversationId)
+      .single();
+
+    const currentDeleted = (conv?.deleted_by_users as string[]) || [];
+    if (currentDeleted.includes(profile.id)) return true;
+
+    const { error } = await supabase
+      .from('conversations')
+      .update({ deleted_by_users: [...currentDeleted, profile.id] })
+      .eq('id', conversationId);
 
     if (error) {
       console.error('Failed to delete conversation:', error);
