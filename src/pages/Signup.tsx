@@ -29,9 +29,11 @@ export default function Signup() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const { profile } = useAuth();
+
   useEffect(() => {
-    if (user) navigate('/home');
-  }, [user, navigate]);
+    if (user && profile?.profile_completed) navigate('/home');
+  }, [user, profile, navigate]);
 
   const form = useForm<SignUpFormData>({
     resolver: zodResolver(signUpSchema),
