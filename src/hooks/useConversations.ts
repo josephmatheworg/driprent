@@ -109,7 +109,26 @@ export function useConversations() {
     return () => { supabase.removeChannel(channel); };
   }, [profile?.id]);
 
-  return { conversations, loading, refetch: fetchConversations };
+  const deleteConversation = async (conversationId: string) => {
+    if (!profile) return false;
+
+    // Add current user to deleted_by_users array
+    const { error } = await supabase.rpc('delete_conversation_for_user', {
+      _conversation_id: conversationId,
+      _user_id: profile.id
+    });
+
+    if (error) {
+      console.error('Failed to delete conversation:', error);
+      return false;
+    }
+
+    // Remove from local state
+    setConversations(prev => prev.filter(c => c.id !== conversationId));
+    return true;
+  };
+
+  return { conversations, loading, refetch: fetchConversations, deleteConversation };
 }
 
 export async function getOrCreateConversation(myProfileId: string, otherProfileId: string): Promise<string | null> {
