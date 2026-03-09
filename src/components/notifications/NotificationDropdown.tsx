@@ -52,7 +52,23 @@ export function NotificationDropdown({ unreadCount, onRead }: NotificationDropdo
 
   useEffect(() => {
     if (open) {
-      fetchNotifications();
+      fetchNotifications().then(() => {
+        // Auto-mark non-actionable notifications as read when dropdown opens
+        if (profile) {
+          supabase
+            .from('notifications')
+            .update({ read: true })
+            .eq('user_id', profile.id)
+            .eq('read', false)
+            .neq('type', 'rental_request')
+            .then(() => {
+              setNotifications(prev =>
+                prev.map(n => n.type === 'rental_request' ? n : { ...n, read: true })
+              );
+              onRead();
+            });
+        }
+      });
     }
   }, [open, profile?.id]);
 
