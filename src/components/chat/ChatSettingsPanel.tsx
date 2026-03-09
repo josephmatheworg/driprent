@@ -8,7 +8,9 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Settings, Handshake, CalendarDays, XCircle, PackageCheck } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { Label } from '@/components/ui/label';
+import { Settings, Handshake, CalendarDays, XCircle, PackageCheck, CalendarPlus } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,8 +21,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface RentalInfo {
   id: string;
@@ -45,12 +56,16 @@ export function ChatSettingsPanel({ rental, isOwner, onConfirmDeal, onRentalUpda
   const [open, setOpen] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showReturnDialog, setShowReturnDialog] = useState(false);
+  const [showExtendDialog, setShowExtendDialog] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [newEndDate, setNewEndDate] = useState<Date | undefined>(undefined);
+  const [extendError, setExtendError] = useState<string | null>(null);
 
   const canConfirm = isOwner && rental && rental.status === 'accepted';
   const canCancel = isOwner && rental && ['accepted', 'confirmed'].includes(rental.status) &&
     new Date(rental.start_date) > new Date();
   const canMarkReturned = isOwner && rental && ['confirmed', 'active'].includes(rental.status);
+  const canExtend = isOwner && rental && ['confirmed', 'active'].includes(rental.status);
 
   const handleCancel = async () => {
     if (!rental) return;
@@ -94,6 +109,49 @@ export function ChatSettingsPanel({ rental, isOwner, onConfirmDeal, onRentalUpda
     onRentalUpdated();
   };
 
+  const handleExtend = async () => {
+    if (!rental || !newEndDate) return;
+    setExtendError(null);
+    setProcessing(true);
+
+    const newEnd = format(newEndDate, 'yyyy-MM-dd');
+
+    // Check for overlapping rentals on this outfit
+    const { data: overlaps } = await supabase
+      .from('rentals')
+      .select('id')
+      .eq('fit_id', rental.fit_id)
+      .neq('id', rental.id)
+      .in('status', ['confirmed', 'active'] as any)
+      .lte('start_date', newEnd)
+      .gte('end_date', rental.end_date);
+
+    if (overlaps && overlaps.length > 0) {
+      setExtendError('Outfit unavailable for selected dates — another rental overlaps.');
+      setProcessing(false);
+      return;
+    }
+
+    const totalDays = Math.ceil((newEndDate.getTime() - new Date(rental.start_date).getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
+    const { error } = await supabase
+      .from('rentals')
+      .update({ end_date: newEnd, total_days: totalDays })
+      .eq('id', rental.id);
+
+    setProcessing(false);
+
+    if (error) {
+      toast({ variant: 'destructive', title: 'Failed to extend', description: error.message });
+      return;
+    }
+
+    toast({ title: 'Rental extended', description: `New end date: ${format(newEndDate, 'MMM d, yyyy')}` });
+    setShowExtendDialog(false);
+    setOpen(false);
+    onRentalUpdated();
+  };
+
   if (!rental) return null;
 
   return (
@@ -120,6 +178,20 @@ export function ChatSettingsPanel({ rental, isOwner, onConfirmDeal, onRentalUpda
               </Button>
             )}
 
+            {canExtend && (
+              <Button
+                variant="outline"
+                className="w-full justify-start gap-2 min-h-[44px]"
+                onClick={() => {
+                  setNewEndDate(new Date(rental.end_date));
+                  setExtendError(null);
+                  setShowExtendDialog(true);
+                }}
+              >
+                <CalendarPlus className="h-4 w-4" /> Extend Rental
+              </Button>
+            )}
+
             {canCancel && (
               <Button
                 variant="outline"
@@ -140,7 +212,7 @@ export function ChatSettingsPanel({ rental, isOwner, onConfirmDeal, onRentalUpda
               </Button>
             )}
 
-            {!canConfirm && !canCancel && !canMarkReturned && (
+            {!canConfirm && !canCancel && !canMarkReturned && !canExtend && (
               <p className="text-sm text-muted-foreground py-4 text-center">
                 No actions available for this rental.
               </p>
@@ -157,6 +229,12 @@ export function ChatSettingsPanel({ rental, isOwner, onConfirmDeal, onRentalUpda
                 <p className="font-medium">{rental.fit_title}</p>
               </div>
             )}
+            <div className="space-y-1 text-sm">
+              <p className="text-muted-foreground">Dates</p>
+              <p className="font-medium">
+                {format(new Date(rental.start_date), 'MMM d')} – {format(new Date(rental.end_date), 'MMM d, yyyy')}
+              </p>
+            </div>
           </div>
         </SheetContent>
       </Sheet>
@@ -196,6 +274,47 @@ export function ChatSettingsPanel({ rental, isOwner, onConfirmDeal, onRentalUpda
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Extend Rental Dialog */}
+      <Dialog open={showExtendDialog} onOpenChange={setShowExtendDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Extend Rental</DialogTitle>
+            <DialogDescription>
+              Select a new end date for {rental.fit_title ? `"${rental.fit_title}"` : 'this rental'}.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div>
+            <Label className="mb-2 block text-sm font-medium">New End Date</Label>
+            <Calendar
+              mode="single"
+              selected={newEndDate}
+              onSelect={setNewEndDate}
+              disabled={(date) => date <= new Date(rental.end_date)}
+              className={cn("rounded-md border pointer-events-auto")}
+            />
+          </div>
+
+          {extendError && (
+            <p className="text-sm text-destructive">{extendError}</p>
+          )}
+
+          {newEndDate && (
+            <div className="text-sm">
+              <Separator className="mb-2" />
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">New end date</span>
+                <span className="font-medium">{format(newEndDate, 'MMM d, yyyy')}</span>
+              </div>
+            </div>
+          )}
+
+          <Button onClick={handleExtend} disabled={processing || !newEndDate} className="w-full">
+            {processing ? 'Extending…' : 'Extend Rental'}
+          </Button>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
