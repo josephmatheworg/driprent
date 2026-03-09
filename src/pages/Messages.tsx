@@ -11,7 +11,7 @@ import { ArrowLeft, MessageSquare } from 'lucide-react';
 export default function Messages() {
   const [searchParams] = useSearchParams();
   const initialConvo = searchParams.get('conversation');
-  const { conversations, loading } = useConversations();
+  const { conversations, loading, deleteConversation } = useConversations();
   const [activeId, setActiveId] = useState<string | null>(initialConvo);
   const isMobile = useIsMobile();
 
@@ -44,6 +44,7 @@ export default function Messages() {
                 conversations={conversations}
                 activeId={activeId}
                 onSelect={setActiveId}
+                onDelete={deleteConversation}
               />
             )}
           </div>

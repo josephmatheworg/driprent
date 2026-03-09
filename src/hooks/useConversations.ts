@@ -34,6 +34,7 @@ export function useConversations() {
       .from('conversations')
       .select('*')
       .or(`user1_id.eq.${profile.id},user2_id.eq.${profile.id}`)
+      .not('deleted_by_users', 'cs', `{${profile.id}}`)
       .order('last_message_at', { ascending: false });
 
     if (error || !convos) {
@@ -108,7 +109,35 @@ export function useConversations() {
     return () => { supabase.removeChannel(channel); };
   }, [profile?.id]);
 
-  return { conversations, loading, refetch: fetchConversations };
+  const deleteConversation = async (conversationId: string) => {
+    if (!profile) return false;
+
+    // Get current deleted_by_users and append current user
+    const { data: conv } = await supabase
+      .from('conversations')
+      .select('deleted_by_users')
+      .eq('id', conversationId)
+      .single();
+
+    const currentDeleted = (conv?.deleted_by_users as string[]) || [];
+    if (currentDeleted.includes(profile.id)) return true;
+
+    const { error } = await supabase
+      .from('conversations')
+      .update({ deleted_by_users: [...currentDeleted, profile.id] })
+      .eq('id', conversationId);
+
+    if (error) {
+      console.error('Failed to delete conversation:', error);
+      return false;
+    }
+
+    // Remove from local state
+    setConversations(prev => prev.filter(c => c.id !== conversationId));
+    return true;
+  };
+
+  return { conversations, loading, refetch: fetchConversations, deleteConversation };
 }
 
 export async function getOrCreateConversation(myProfileId: string, otherProfileId: string): Promise<string | null> {

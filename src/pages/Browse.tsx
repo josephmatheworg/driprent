@@ -15,13 +15,16 @@ import {
 import { Slider } from '@/components/ui/slider';
 import { supabase } from '@/integrations/supabase/client';
 import { CATEGORIES, SIZES, type Fit, type FitCategory, type FitSize } from '@/types/database';
-import { Search, SlidersHorizontal, X } from 'lucide-react';
+import { Search, SlidersHorizontal, X, Camera, ImageIcon } from 'lucide-react';
+import { ImageSearchModal } from '@/components/browse/ImageSearchModal';
 
 export default function Browse() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [fits, setFits] = useState<Fit[]>([]);
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
+  const [imageSearchOpen, setImageSearchOpen] = useState(false);
+  const [imageSearchResults, setImageSearchResults] = useState<Fit[] | null>(null);
 
   // Filter states
   const [search, setSearch] = useState(searchParams.get('search') || '');
@@ -78,9 +81,20 @@ export default function Browse() {
     setSize('all');
     setPriceRange([0, 500]);
     setSearchParams({});
+    setImageSearchResults(null);
+  };
+
+  const handleImageSearchResults = (results: Fit[]) => {
+    setImageSearchResults(results);
+  };
+
+  const clearImageSearch = () => {
+    setImageSearchResults(null);
   };
 
   const hasActiveFilters = category !== 'all' || size !== 'all' || search || priceRange[0] > 0 || priceRange[1] < 500;
+  
+  const displayFits = imageSearchResults || fits;
 
   return (
     <Layout>
@@ -104,6 +118,15 @@ export default function Browse() {
               />
             </div>
             <Button type="submit">Search</Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={() => setImageSearchOpen(true)}
+              title="Search by photo"
+            >
+              <Camera className="h-4 w-4" />
+            </Button>
           </form>
 
           <Button
@@ -120,6 +143,20 @@ export default function Browse() {
             )}
           </Button>
         </div>
+
+        {/* Image Search Results Banner */}
+        {imageSearchResults && (
+          <div className="mb-6 flex items-center justify-between rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+            <div className="flex items-center gap-2">
+              <ImageIcon className="h-5 w-5 text-primary" />
+              <span className="font-medium">Showing similar outfits from photo search</span>
+              <span className="text-sm text-muted-foreground">({imageSearchResults.length} results)</span>
+            </div>
+            <Button variant="ghost" size="sm" onClick={clearImageSearch}>
+              <X className="mr-1 h-4 w-4" /> Clear
+            </Button>
+          </div>
+        )}
 
         {/* Filters Panel */}
         {showFilters && (
@@ -185,37 +222,43 @@ export default function Browse() {
         )}
 
         {/* Results */}
-        {loading ? (
+        {loading && !imageSearchResults ? (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="aspect-[3/4] animate-pulse rounded-2xl bg-muted" />
             ))}
           </div>
-        ) : fits.length === 0 ? (
+        ) : displayFits.length === 0 ? (
           <div className="py-20 text-center">
             <h3 className="font-display text-3xl text-foreground">NO FITS FOUND</h3>
             <p className="mt-2 text-muted-foreground">
-              Try adjusting your filters or search terms
+              {imageSearchResults ? 'No similar outfits found. Try a different photo.' : 'Try adjusting your filters or search terms'}
             </p>
-            {hasActiveFilters && (
-              <Button variant="outline" onClick={clearFilters} className="mt-4">
-                Clear Filters
+            {(hasActiveFilters || imageSearchResults) && (
+              <Button variant="outline" onClick={imageSearchResults ? clearImageSearch : clearFilters} className="mt-4">
+                {imageSearchResults ? 'Clear Photo Search' : 'Clear Filters'}
               </Button>
             )}
           </div>
         ) : (
           <>
             <p className="mb-4 text-sm text-muted-foreground">
-              {fits.length} fit{fits.length !== 1 ? 's' : ''} found
+              {displayFits.length} fit{displayFits.length !== 1 ? 's' : ''} found
             </p>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {fits.map((fit) => (
+              {displayFits.map((fit) => (
                 <FitCard key={fit.id} fit={fit} />
               ))}
             </div>
           </>
         )}
       </div>
+
+      <ImageSearchModal
+        open={imageSearchOpen}
+        onOpenChange={setImageSearchOpen}
+        onResults={handleImageSearchResults}
+      />
     </Layout>
   );
 }
