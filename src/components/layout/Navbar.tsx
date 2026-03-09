@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { NotificationDropdown } from '@/components/notifications/NotificationDropdown';
 import { useUnreadCounts } from '@/hooks/useUnreadCounts';
-import { User, Heart, Package, LogOut, MessageSquare, Menu, X } from 'lucide-react';
+import { User, Heart, Package, LogOut, MessageSquare, Menu, X, Search } from 'lucide-react';
 
 export function Navbar() {
   const { user, profile, signOut } = useAuth();
@@ -38,6 +38,9 @@ export function Navbar() {
         <div className="hidden items-center gap-8 md:flex">
           <Link to="/browse" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
             Browse Fits
+          </Link>
+          <Link to="/requests" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
+            Requests
           </Link>
           <Link to="/how-it-works" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
             How It Works
@@ -149,6 +152,9 @@ export function Navbar() {
           <div className="flex flex-col gap-1">
             <Link to="/browse" onClick={closeMobile} className="rounded-lg px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent">
               Browse Fits
+            </Link>
+            <Link to="/requests" onClick={closeMobile} className="rounded-lg px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent">
+              Outfit Requests
             </Link>
             <Link to="/how-it-works" onClick={closeMobile} className="rounded-lg px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent">
               How It Works
