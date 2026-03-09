@@ -153,6 +153,9 @@ export function Navbar() {
             <Link to="/browse" onClick={closeMobile} className="rounded-lg px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent">
               Browse Fits
             </Link>
+            <Link to="/requests" onClick={closeMobile} className="rounded-lg px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent">
+              Outfit Requests
+            </Link>
             <Link to="/how-it-works" onClick={closeMobile} className="rounded-lg px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent">
               How It Works
             </Link>
