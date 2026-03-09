@@ -46,7 +46,7 @@ export default function OutfitRequests() {
       .order('created_at', { ascending: false });
 
     if (category && category !== 'all') {
-      query = query.eq('category', category);
+      query = query.eq('category', category as any);
     }
     if (size && size !== 'all') {
       query = query.eq('size', size);
