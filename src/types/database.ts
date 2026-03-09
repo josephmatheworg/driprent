@@ -1,6 +1,8 @@
 export type FitCategory = 'dresses' | 'suits' | 'streetwear' | 'formal' | 'casual' | 'accessories' | 'shoes' | 'outerwear' | 'vintage' | 'designer';
 export type FitSize = 'XXS' | 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL' | '3XL';
 export type RentalStatus = 'pending' | 'accepted' | 'confirmed' | 'active' | 'returned' | 'cancelled' | 'disputed' | 'completed';
+export type RequestCategory = 'menswear' | 'womenswear' | 'unisex';
+export type RequestStatus = 'open' | 'negotiating' | 'fulfilled' | 'closed';
 
 export interface Profile {
   id: string;
@@ -97,6 +99,35 @@ export interface Notification {
   created_at: string;
 }
 
+export interface OutfitRequest {
+  id: string;
+  user_id: string;
+  title: string;
+  description: string | null;
+  reference_image_url: string | null;
+  size: string;
+  category: RequestCategory;
+  date_needed: string | null;
+  budget: number | null;
+  location: string | null;
+  status: RequestStatus;
+  created_at: string;
+  updated_at: string;
+  user?: Profile;
+  reply_count?: number;
+}
+
+export interface RequestReply {
+  id: string;
+  request_id: string;
+  user_id: string;
+  outfit_id: string | null;
+  comment: string;
+  created_at: string;
+  user?: Profile;
+  outfit?: Fit;
+}
+
 export const CATEGORIES: { value: FitCategory; label: string }[] = [
   { value: 'dresses', label: 'Dresses' },
   { value: 'suits', label: 'Suits' },
@@ -119,4 +150,10 @@ export const SIZES: { value: FitSize; label: string }[] = [
   { value: 'XL', label: 'XL' },
   { value: 'XXL', label: 'XXL' },
   { value: '3XL', label: '3XL' },
+];
+
+export const REQUEST_CATEGORIES: { value: RequestCategory; label: string }[] = [
+  { value: 'menswear', label: 'Menswear' },
+  { value: 'womenswear', label: 'Womenswear' },
+  { value: 'unisex', label: 'Unisex' },
 ];
