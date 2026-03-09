@@ -216,6 +216,62 @@ export type Database = {
           },
         ]
       }
+      outfit_requests: {
+        Row: {
+          budget: number | null
+          category: Database["public"]["Enums"]["request_category"]
+          created_at: string
+          date_needed: string | null
+          description: string | null
+          id: string
+          location: string | null
+          reference_image_url: string | null
+          size: string
+          status: Database["public"]["Enums"]["request_status"]
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          budget?: number | null
+          category?: Database["public"]["Enums"]["request_category"]
+          created_at?: string
+          date_needed?: string | null
+          description?: string | null
+          id?: string
+          location?: string | null
+          reference_image_url?: string | null
+          size: string
+          status?: Database["public"]["Enums"]["request_status"]
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          budget?: number | null
+          category?: Database["public"]["Enums"]["request_category"]
+          created_at?: string
+          date_needed?: string | null
+          description?: string | null
+          id?: string
+          location?: string | null
+          reference_image_url?: string | null
+          size?: string
+          status?: Database["public"]["Enums"]["request_status"]
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outfit_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       outfits: {
         Row: {
           created_at: string
@@ -402,6 +458,55 @@ export type Database = {
           },
         ]
       }
+      request_replies: {
+        Row: {
+          comment: string
+          created_at: string
+          id: string
+          outfit_id: string | null
+          request_id: string
+          user_id: string
+        }
+        Insert: {
+          comment: string
+          created_at?: string
+          id?: string
+          outfit_id?: string | null
+          request_id: string
+          user_id: string
+        }
+        Update: {
+          comment?: string
+          created_at?: string
+          id?: string
+          outfit_id?: string | null
+          request_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "request_replies_outfit_id_fkey"
+            columns: ["outfit_id"]
+            isOneToOne: false
+            referencedRelation: "fits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "request_replies_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "outfit_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "request_replies_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reviews: {
         Row: {
           comment: string | null
@@ -532,6 +637,8 @@ export type Database = {
         | "disputed"
         | "accepted"
         | "completed"
+      request_category: "menswear" | "womenswear" | "unisex"
+      request_status: "open" | "negotiating" | "fulfilled" | "closed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -683,6 +790,8 @@ export const Constants = {
         "accepted",
         "completed",
       ],
+      request_category: ["menswear", "womenswear", "unisex"],
+      request_status: ["open", "negotiating", "fulfilled", "closed"],
     },
   },
 } as const
