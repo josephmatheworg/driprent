@@ -34,6 +34,7 @@ export function useConversations() {
       .from('conversations')
       .select('*')
       .or(`user1_id.eq.${profile.id},user2_id.eq.${profile.id}`)
+      .not('deleted_by_users', 'cs', `{${profile.id}}`)
       .order('last_message_at', { ascending: false });
 
     if (error || !convos) {
