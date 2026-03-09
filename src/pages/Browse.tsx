@@ -23,6 +23,8 @@ export default function Browse() {
   const [fits, setFits] = useState<Fit[]>([]);
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
+  const [imageSearchOpen, setImageSearchOpen] = useState(false);
+  const [imageSearchResults, setImageSearchResults] = useState<Fit[] | null>(null);
 
   // Filter states
   const [search, setSearch] = useState(searchParams.get('search') || '');
