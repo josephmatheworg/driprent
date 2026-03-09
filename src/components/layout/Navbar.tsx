@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { NotificationDropdown } from '@/components/notifications/NotificationDropdown';
 import { useUnreadCounts } from '@/hooks/useUnreadCounts';
-import { User, Heart, Package, LogOut, MessageSquare, Menu, X } from 'lucide-react';
+import { User, Heart, Package, LogOut, MessageSquare, Menu, X, Search } from 'lucide-react';
 
 export function Navbar() {
   const { user, profile, signOut } = useAuth();

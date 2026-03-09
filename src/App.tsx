@@ -19,6 +19,9 @@ import Rentals from "./pages/Rentals";
 import Profile from "./pages/Profile";
 import Messages from "./pages/Messages";
 import HowItWorks from "./pages/HowItWorks";
+import OutfitRequests from "./pages/OutfitRequests";
+import CreateRequest from "./pages/CreateRequest";
+import RequestDetail from "./pages/RequestDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,6 +47,9 @@ const App = () => (
             <Route path="/rentals" element={<ProfileGuard><Rentals /></ProfileGuard>} />
             <Route path="/profile" element={<ProfileGuard><Profile /></ProfileGuard>} />
             <Route path="/messages" element={<ProfileGuard><Messages /></ProfileGuard>} />
+            <Route path="/requests" element={<ProfileGuard><OutfitRequests /></ProfileGuard>} />
+            <Route path="/requests/create" element={<ProfileGuard><CreateRequest /></ProfileGuard>} />
+            <Route path="/requests/:id" element={<ProfileGuard><RequestDetail /></ProfileGuard>} />
             <Route path="/how-it-works" element={<HowItWorks />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
