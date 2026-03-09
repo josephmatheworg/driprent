@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
+import { format, eachDayOfInterval, isWithinInterval } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { cn } from '@/lib/utils';
 
@@ -32,16 +32,66 @@ interface ConfirmDealPanelProps {
 export function ConfirmDealPanel({ open, onOpenChange, rental, onConfirmed }: ConfirmDealPanelProps) {
   const { toast } = useToast();
   const [confirming, setConfirming] = useState(false);
+  const [overlapError, setOverlapError] = useState<string | null>(null);
+  const [blockedDates, setBlockedDates] = useState<Date[]>([]);
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: new Date(rental.start_date),
     to: new Date(rental.end_date),
   });
+
+  // Fetch existing confirmed/active rentals for this outfit to show blocked dates
+  useEffect(() => {
+    if (!open) return;
+    const fetchBlocked = async () => {
+      const { data } = await supabase
+        .from('rentals')
+        .select('start_date, end_date')
+        .eq('fit_id', rental.fit_id)
+        .neq('id', rental.id)
+        .in('status', ['confirmed', 'active'] as any);
+
+      if (data) {
+        const dates: Date[] = [];
+        data.forEach((r: any) => {
+          eachDayOfInterval({ start: new Date(r.start_date), end: new Date(r.end_date) }).forEach(d => dates.push(d));
+        });
+        setBlockedDates(dates);
+      }
+    };
+    fetchBlocked();
+    // Reset to rental defaults when opening
+    setDateRange({ from: new Date(rental.start_date), to: new Date(rental.end_date) });
+    setOverlapError(null);
+  }, [open, rental.fit_id, rental.id, rental.start_date, rental.end_date]);
+
+  const checkOverlap = (range: DateRange | undefined) => {
+    if (!range?.from || !range?.to || blockedDates.length === 0) {
+      setOverlapError(null);
+      return false;
+    }
+    const hasOverlap = blockedDates.some(d =>
+      isWithinInterval(d, { start: range.from!, end: range.to! })
+    );
+    if (hasOverlap) {
+      setOverlapError('Outfit unavailable for selected dates — another rental overlaps.');
+      return true;
+    }
+    setOverlapError(null);
+    return false;
+  };
+
+  const handleDateSelect = (range: DateRange | undefined) => {
+    setDateRange(range);
+    checkOverlap(range);
+  };
 
   const handleConfirm = async () => {
     if (!dateRange?.from || !dateRange?.to) {
       toast({ variant: 'destructive', title: 'Please select dates' });
       return;
     }
+
+    if (checkOverlap(dateRange)) return;
 
     setConfirming(true);
 
@@ -71,13 +121,23 @@ export function ConfirmDealPanel({ open, onOpenChange, rental, onConfirmed }: Co
     onConfirmed();
   };
 
+  // Mark blocked dates as disabled in the calendar
+  const isDateBlocked = (date: Date) => {
+    if (date < new Date()) return true;
+    return blockedDates.some(d =>
+      d.getFullYear() === date.getFullYear() &&
+      d.getMonth() === date.getMonth() &&
+      d.getDate() === date.getDate()
+    );
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Confirm Deal</DialogTitle>
           <DialogDescription>
-            Confirm the rental dates for {rental.fit_title ? `"${rental.fit_title}"` : 'this outfit'}. Adjust if needed.
+            Confirm the rental dates for {rental.fit_title ? `"${rental.fit_title}"` : 'this outfit'}. Adjust if needed. Dates in red are already booked.
           </DialogDescription>
         </DialogHeader>
 
@@ -86,14 +146,20 @@ export function ConfirmDealPanel({ open, onOpenChange, rental, onConfirmed }: Co
           <Calendar
             mode="range"
             selected={dateRange}
-            onSelect={setDateRange}
-            disabled={(date) => date < new Date()}
+            onSelect={handleDateSelect}
+            disabled={isDateBlocked}
             className={cn("rounded-md border pointer-events-auto")}
             numberOfMonths={1}
+            modifiers={{ booked: blockedDates }}
+            modifiersClassNames={{ booked: 'bg-destructive/20 text-destructive line-through' }}
           />
         </div>
 
-        {dateRange?.from && dateRange?.to && (
+        {overlapError && (
+          <p className="text-sm text-destructive font-medium">{overlapError}</p>
+        )}
+
+        {dateRange?.from && dateRange?.to && !overlapError && (
           <div className="space-y-1 text-sm">
             <Separator />
             <div className="flex justify-between">
@@ -109,7 +175,7 @@ export function ConfirmDealPanel({ open, onOpenChange, rental, onConfirmed }: Co
 
         <Button
           onClick={handleConfirm}
-          disabled={confirming || !dateRange?.from || !dateRange?.to}
+          disabled={confirming || !dateRange?.from || !dateRange?.to || !!overlapError}
           className="w-full"
         >
           {confirming ? 'Confirming...' : 'Confirm Deal & Lock Dates'}
