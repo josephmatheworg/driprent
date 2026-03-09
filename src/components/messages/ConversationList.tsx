@@ -1,13 +1,33 @@
+import { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import type { ConversationWithDetails } from '@/hooks/useConversations';
 import { formatDistanceToNow } from 'date-fns';
+import { MoreVertical, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface ConversationListProps {
   conversations: ConversationWithDetails[];
   activeId: string | null;
   onSelect: (id: string) => void;
+  onDelete?: (id: string) => Promise<boolean>;
 }
 
 export function ConversationList({ conversations, activeId, onSelect }: ConversationListProps) {
