@@ -44,6 +44,7 @@ export default function Messages() {
                 conversations={conversations}
                 activeId={activeId}
                 onSelect={setActiveId}
+                onDelete={deleteConversation}
               />
             )}
           </div>
