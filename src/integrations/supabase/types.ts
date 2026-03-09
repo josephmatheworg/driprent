@@ -604,6 +604,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      delete_conversation_for_user: {
+        Args: { _conversation_id: string; _user_id: string }
+        Returns: undefined
+      }
       get_profile_id_for_auth: { Args: { _auth_id: string }; Returns: string }
       has_role: {
         Args: {

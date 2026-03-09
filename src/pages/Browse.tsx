@@ -92,6 +92,10 @@ export default function Browse() {
     setImageSearchResults(null);
   };
 
+  const hasActiveFilters = category !== 'all' || size !== 'all' || search || priceRange[0] > 0 || priceRange[1] < 500;
+  
+  const displayFits = imageSearchResults || fits;
+
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8">
@@ -114,6 +118,15 @@ export default function Browse() {
               />
             </div>
             <Button type="submit">Search</Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={() => setImageSearchOpen(true)}
+              title="Search by photo"
+            >
+              <Camera className="h-4 w-4" />
+            </Button>
           </form>
 
           <Button
@@ -130,6 +143,20 @@ export default function Browse() {
             )}
           </Button>
         </div>
+
+        {/* Image Search Results Banner */}
+        {imageSearchResults && (
+          <div className="mb-6 flex items-center justify-between rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+            <div className="flex items-center gap-2">
+              <ImageIcon className="h-5 w-5 text-primary" />
+              <span className="font-medium">Showing similar outfits from photo search</span>
+              <span className="text-sm text-muted-foreground">({imageSearchResults.length} results)</span>
+            </div>
+            <Button variant="ghost" size="sm" onClick={clearImageSearch}>
+              <X className="mr-1 h-4 w-4" /> Clear
+            </Button>
+          </div>
+        )}
 
         {/* Filters Panel */}
         {showFilters && (
