@@ -81,9 +81,16 @@ export default function Browse() {
     setSize('all');
     setPriceRange([0, 500]);
     setSearchParams({});
+    setImageSearchResults(null);
   };
 
-  const hasActiveFilters = category !== 'all' || size !== 'all' || search || priceRange[0] > 0 || priceRange[1] < 500;
+  const handleImageSearchResults = (results: Fit[]) => {
+    setImageSearchResults(results);
+  };
+
+  const clearImageSearch = () => {
+    setImageSearchResults(null);
+  };
 
   return (
     <Layout>
