@@ -39,6 +39,9 @@ export function Navbar() {
           <Link to="/browse" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
             Browse Fits
           </Link>
+          <Link to="/requests" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
+            Requests
+          </Link>
           <Link to="/how-it-works" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
             How It Works
           </Link>
