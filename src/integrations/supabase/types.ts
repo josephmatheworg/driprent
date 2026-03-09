@@ -56,6 +56,51 @@ export type Database = {
           },
         ]
       }
+      fit_booked_ranges: {
+        Row: {
+          created_at: string
+          end_date: string
+          fit_id: string
+          id: string
+          rental_id: string
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_date: string
+          fit_id: string
+          id?: string
+          rental_id: string
+          start_date: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string
+          fit_id?: string
+          id?: string
+          rental_id?: string
+          start_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fit_booked_ranges_fit_id_fkey"
+            columns: ["fit_id"]
+            isOneToOne: false
+            referencedRelation: "fits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fit_booked_ranges_rental_id_fkey"
+            columns: ["rental_id"]
+            isOneToOne: true
+            referencedRelation: "rentals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fits: {
         Row: {
           available_from: string
