@@ -296,7 +296,7 @@ export default function FitDetail() {
                   <Calendar
                     mode="range"
                     selected={dateRange}
-                    onSelect={setDateRange}
+                    onSelect={handleDateSelect}
                     disabled={(date) => date < new Date() || isDateBooked(date)}
                     modifiers={{ booked: bookedDates }}
                     modifiersClassNames={{ booked: 'bg-destructive/20 text-destructive line-through' }}
