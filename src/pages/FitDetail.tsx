@@ -248,7 +248,7 @@ export default function FitDetail() {
                 <div className="flex-1">
                   <p className="font-medium">{fit.owner.username}</p>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    {fit.owner.location && (<><MapPin className="h-3 w-3" />{fit.owner.location}</>)}
+                    {fit.owner.location_city && (<><MapPin className="h-3 w-3" />{fit.owner.location_city}</>)}
                     {fit.owner.rating > 0 && (
                       <span className="flex items-center gap-1">
                         <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
