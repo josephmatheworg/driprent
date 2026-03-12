@@ -35,7 +35,7 @@ export function ChatWindow({ conversationId, otherUser }: ChatWindowProps) {
     // Fetch the most relevant rental between the two users (not cancelled/completed first)
     const { data } = await supabase
       .from('rentals')
-      .select('id, fit_id, start_date, end_date, owner_id, renter_id, status, fits(title)')
+      .select('id, fit_id, start_date, end_date, owner_id, renter_id, status, fits(title), owner:profiles!rentals_owner_id_fkey(latitude, longitude)')
       .or(`and(owner_id.eq.${profile.id},renter_id.eq.${otherUser.id}),and(owner_id.eq.${otherUser.id},renter_id.eq.${profile.id})`)
       .in('status', ['accepted', 'confirmed', 'active'] as any)
       .order('created_at', { ascending: false })
@@ -43,7 +43,13 @@ export function ChatWindow({ conversationId, otherUser }: ChatWindowProps) {
       .maybeSingle();
 
     if (data) {
-      setRental({ ...data, fit_title: (data as any).fits?.title });
+      const ownerProfile = (data as any).owner;
+      setRental({
+        ...data,
+        fit_title: (data as any).fits?.title,
+        owner_latitude: ownerProfile?.latitude ?? null,
+        owner_longitude: ownerProfile?.longitude ?? null,
+      });
     } else {
       setRental(null);
     }
