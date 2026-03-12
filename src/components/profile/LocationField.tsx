@@ -34,6 +34,7 @@ export function LocationField({ city, state, country, onCityChange, onStateChang
           onCityChange(data.address?.city || data.address?.town || data.address?.village || '');
           onStateChange(data.address?.state || '');
           onCountryChange(data.address?.country || '');
+          onCoordsChange?.(position.coords.latitude, position.coords.longitude);
         } catch {
           toast({ variant: 'destructive', title: 'Location failed', description: 'Could not detect your location.' });
         } finally {
