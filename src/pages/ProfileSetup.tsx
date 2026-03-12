@@ -188,6 +188,8 @@ export default function ProfileSetup() {
           location_country: locationCountry.trim(),
           avatar_url: `${urlData.publicUrl}?t=${Date.now()}`,
           profile_completed: true,
+          latitude,
+          longitude,
         } as any)
         .eq('id', profile.id);
 
