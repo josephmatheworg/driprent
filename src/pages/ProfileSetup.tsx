@@ -32,6 +32,8 @@ interface DraftData {
   locationState: string;
   locationCountry: string;
   bio: string;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 function loadDraft(): DraftData | null {
