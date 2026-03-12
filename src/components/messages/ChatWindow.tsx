@@ -115,6 +115,8 @@ export function ChatWindow({ conversationId, otherUser }: ChatWindowProps) {
           startDate={rental.start_date}
           endDate={rental.end_date}
           status={rental.status}
+          ownerLatitude={rental.owner_latitude}
+          ownerLongitude={rental.owner_longitude}
         />
       )}
 
