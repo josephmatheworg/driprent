@@ -298,6 +298,7 @@ export default function ProfileSetup() {
                   onCityChange={setLocationCity}
                   onStateChange={setLocationState}
                   onCountryChange={setLocationCountry}
+                  onCoordsChange={(lat, lng) => { setLatitude(lat); setLongitude(lng); }}
                 />
               </div>
             )}

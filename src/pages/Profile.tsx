@@ -242,6 +242,10 @@ export default function Profile() {
                 onCityChange={setLocationCity}
                 onStateChange={setLocationState}
                 onCountryChange={setLocationCountry}
+                onCoordsChange={(lat, lng) => {
+                  (profile as any).latitude = lat;
+                  (profile as any).longitude = lng;
+                }}
               />
             </div>
 
