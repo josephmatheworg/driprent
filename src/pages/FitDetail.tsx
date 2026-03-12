@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import type { Fit } from '@/types/database';
-import { Star, ChevronLeft, ChevronRight, Shield, MapPin } from 'lucide-react';
+import { Star, ChevronLeft, ChevronRight, Shield, MapPin, Navigation } from 'lucide-react';
 import { format, differenceInDays, eachDayOfInterval, isSameDay } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { cn } from '@/lib/utils';
