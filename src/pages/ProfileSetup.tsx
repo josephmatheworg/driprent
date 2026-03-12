@@ -102,8 +102,8 @@ export default function ProfileSetup() {
 
   // Persist draft on field changes
   useEffect(() => {
-    saveDraft({ phone, locationCity, locationState, locationCountry, bio });
-  }, [phone, locationCity, locationState, locationCountry, bio]);
+    saveDraft({ phone, locationCity, locationState, locationCountry, bio, latitude, longitude });
+  }, [phone, locationCity, locationState, locationCountry, bio, latitude, longitude]);
 
   useEffect(() => {
     if (!user) navigate('/login');
