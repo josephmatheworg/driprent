@@ -16,7 +16,7 @@ interface LocationFieldProps {
   disabled?: boolean;
 }
 
-export function LocationField({ city, state, country, onCityChange, onStateChange, onCountryChange, disabled }: LocationFieldProps) {
+export function LocationField({ city, state, country, onCityChange, onStateChange, onCountryChange, onCoordsChange, disabled }: LocationFieldProps) {
   const [geoLoading, setGeoLoading] = useState(false);
   const { toast } = useToast();
 
