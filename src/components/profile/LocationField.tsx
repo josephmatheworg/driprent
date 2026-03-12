@@ -12,6 +12,7 @@ interface LocationFieldProps {
   onCityChange: (v: string) => void;
   onStateChange: (v: string) => void;
   onCountryChange: (v: string) => void;
+  onCoordsChange?: (lat: number, lng: number) => void;
   disabled?: boolean;
 }
 
