@@ -105,7 +105,7 @@ export default function FitDetail() {
     const selectedDays = eachDayOfInterval({ start: dateRange.from, end: dateRange.to });
     const hasOverlap = selectedDays.some(d => isDateBooked(d));
     if (hasOverlap) {
-      toast({ variant: 'destructive', title: 'Dates unavailable', description: 'Some selected dates are already booked.' });
+      toast({ variant: 'destructive', title: 'Dates unavailable', description: 'This outfit is already booked for the selected date. Please choose different dates.' });
       return;
     }
 
