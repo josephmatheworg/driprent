@@ -364,10 +364,12 @@ export type Database = {
           full_name: string | null
           gender: string | null
           id: string
+          latitude: number | null
           location: string | null
           location_city: string | null
           location_country: string | null
           location_state: string | null
+          longitude: number | null
           phone: string | null
           profile_completed: boolean
           rating: number | null
@@ -384,10 +386,12 @@ export type Database = {
           full_name?: string | null
           gender?: string | null
           id?: string
+          latitude?: number | null
           location?: string | null
           location_city?: string | null
           location_country?: string | null
           location_state?: string | null
+          longitude?: number | null
           phone?: string | null
           profile_completed?: boolean
           rating?: number | null
@@ -404,10 +408,12 @@ export type Database = {
           full_name?: string | null
           gender?: string | null
           id?: string
+          latitude?: number | null
           location?: string | null
           location_city?: string | null
           location_country?: string | null
           location_state?: string | null
+          longitude?: number | null
           phone?: string | null
           profile_completed?: boolean
           rating?: number | null
