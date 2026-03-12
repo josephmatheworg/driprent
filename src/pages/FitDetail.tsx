@@ -48,14 +48,13 @@ export default function FitDetail() {
   const fetchBookedDates = async () => {
     if (!id) return;
     const { data } = await supabase
-      .from('rentals')
+      .from('fit_booked_ranges')
       .select('start_date, end_date')
-      .eq('fit_id', id)
-      .in('status', ['confirmed', 'active'] as any);
+      .eq('fit_id', id);
 
     if (data) {
       const dates: Date[] = [];
-      data.forEach(r => {
+      data.forEach((r: any) => {
         const interval = eachDayOfInterval({
           start: new Date(r.start_date),
           end: new Date(r.end_date),
@@ -65,6 +64,20 @@ export default function FitDetail() {
       setBookedDates(dates);
     }
   };
+
+  // Realtime subscription for instant updates when deals are confirmed/cancelled
+  useEffect(() => {
+    if (!id) return;
+    const channel = supabase
+      .channel(`fit-booked-${id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'fit_booked_ranges', filter: `fit_id=eq.${id}` },
+        () => { fetchBookedDates(); }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [id]);
 
   const isDateBooked = (date: Date) => bookedDates.some(d => isSameDay(d, date));
 
