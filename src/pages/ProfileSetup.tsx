@@ -68,6 +68,8 @@ export default function ProfileSetup() {
   const [locationCity, setLocationCity] = useState('');
   const [locationState, setLocationState] = useState('');
   const [locationCountry, setLocationCountry] = useState('');
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
 
   // Step 3 fields
   const [bio, setBio] = useState('');
