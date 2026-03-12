@@ -83,6 +83,8 @@ export default function ProfileSetup() {
       setLocationState(draft.locationState || '');
       setLocationCountry(draft.locationCountry || '');
       setBio(draft.bio || '');
+      setLatitude(draft.latitude ?? null);
+      setLongitude(draft.longitude ?? null);
     }
   }, []);
 
