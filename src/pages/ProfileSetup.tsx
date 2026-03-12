@@ -32,6 +32,8 @@ interface DraftData {
   locationState: string;
   locationCountry: string;
   bio: string;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 function loadDraft(): DraftData | null {
@@ -66,6 +68,8 @@ export default function ProfileSetup() {
   const [locationCity, setLocationCity] = useState('');
   const [locationState, setLocationState] = useState('');
   const [locationCountry, setLocationCountry] = useState('');
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
 
   // Step 3 fields
   const [bio, setBio] = useState('');
@@ -79,6 +83,8 @@ export default function ProfileSetup() {
       setLocationState(draft.locationState || '');
       setLocationCountry(draft.locationCountry || '');
       setBio(draft.bio || '');
+      setLatitude(draft.latitude ?? null);
+      setLongitude(draft.longitude ?? null);
     }
   }, []);
 
@@ -96,8 +102,8 @@ export default function ProfileSetup() {
 
   // Persist draft on field changes
   useEffect(() => {
-    saveDraft({ phone, locationCity, locationState, locationCountry, bio });
-  }, [phone, locationCity, locationState, locationCountry, bio]);
+    saveDraft({ phone, locationCity, locationState, locationCountry, bio, latitude, longitude });
+  }, [phone, locationCity, locationState, locationCountry, bio, latitude, longitude]);
 
   useEffect(() => {
     if (!user) navigate('/login');
@@ -182,6 +188,8 @@ export default function ProfileSetup() {
           location_country: locationCountry.trim(),
           avatar_url: `${urlData.publicUrl}?t=${Date.now()}`,
           profile_completed: true,
+          latitude,
+          longitude,
         } as any)
         .eq('id', profile.id);
 
@@ -290,6 +298,7 @@ export default function ProfileSetup() {
                   onCityChange={setLocationCity}
                   onStateChange={setLocationState}
                   onCountryChange={setLocationCountry}
+                  onCoordsChange={(lat, lng) => { setLatitude(lat); setLongitude(lng); }}
                 />
               </div>
             )}

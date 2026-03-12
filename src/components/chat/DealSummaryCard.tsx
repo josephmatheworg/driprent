@@ -1,6 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CalendarDays, ShirtIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { CalendarDays, ShirtIcon, Navigation } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface DealSummaryCardProps {
@@ -8,6 +9,8 @@ interface DealSummaryCardProps {
   startDate: string;
   endDate: string;
   status: string;
+  ownerLatitude?: number | null;
+  ownerLongitude?: number | null;
 }
 
 const statusColors: Record<string, string> = {
@@ -19,7 +22,16 @@ const statusColors: Record<string, string> = {
   cancelled: 'bg-destructive/15 text-destructive',
 };
 
-export function DealSummaryCard({ fitTitle, startDate, endDate, status }: DealSummaryCardProps) {
+export function DealSummaryCard({ fitTitle, startDate, endDate, status, ownerLatitude, ownerLongitude }: DealSummaryCardProps) {
+  const isConfirmedOrActive = ['confirmed', 'active'].includes(status);
+  const hasCoords = ownerLatitude != null && ownerLongitude != null;
+
+  const handleGetDirections = () => {
+    if (hasCoords) {
+      window.open(`https://www.google.com/maps/dir/?api=1&destination=${ownerLatitude},${ownerLongitude}`, '_blank');
+    }
+  };
+
   return (
     <Card className="mx-auto my-3 max-w-[90%] border-primary/20 bg-card">
       <CardContent className="p-3 space-y-2">
@@ -39,6 +51,11 @@ export function DealSummaryCard({ fitTitle, startDate, endDate, status }: DealSu
           <CalendarDays className="h-3.5 w-3.5 shrink-0" />
           <span>{format(new Date(startDate), 'MMM d')} – {format(new Date(endDate), 'MMM d, yyyy')}</span>
         </div>
+        {isConfirmedOrActive && hasCoords && (
+          <Button variant="outline" size="sm" className="w-full mt-1 gap-2" onClick={handleGetDirections}>
+            <Navigation className="h-3.5 w-3.5" /> Get Directions
+          </Button>
+        )}
       </CardContent>
     </Card>
   );

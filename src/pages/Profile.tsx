@@ -110,6 +110,10 @@ export default function Profile() {
 
       const location = [locationCity, locationState, locationCountry].filter(Boolean).join(', ');
 
+      // Try to get coords if not already set
+      let lat = (profile as any).latitude;
+      let lng = (profile as any).longitude;
+
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -122,7 +126,9 @@ export default function Profile() {
           location_state: locationState.trim() || null,
           location_country: locationCountry.trim() || null,
           avatar_url: avatarUrl,
-        })
+          latitude: lat,
+          longitude: lng,
+        } as any)
         .eq('id', profile.id);
 
       if (error) throw error;
@@ -236,6 +242,10 @@ export default function Profile() {
                 onCityChange={setLocationCity}
                 onStateChange={setLocationState}
                 onCountryChange={setLocationCountry}
+                onCoordsChange={(lat, lng) => {
+                  (profile as any).latitude = lat;
+                  (profile as any).longitude = lng;
+                }}
               />
             </div>
 

@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import type { Fit } from '@/types/database';
-import { Star, ChevronLeft, ChevronRight, Shield, MapPin } from 'lucide-react';
+import { Star, ChevronLeft, ChevronRight, Shield, MapPin, Navigation } from 'lucide-react';
 import { format, differenceInDays, eachDayOfInterval, isSameDay } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { cn } from '@/lib/utils';
@@ -48,14 +48,13 @@ export default function FitDetail() {
   const fetchBookedDates = async () => {
     if (!id) return;
     const { data } = await supabase
-      .from('rentals')
+      .from('fit_booked_ranges')
       .select('start_date, end_date')
-      .eq('fit_id', id)
-      .in('status', ['confirmed', 'active'] as any);
+      .eq('fit_id', id);
 
     if (data) {
       const dates: Date[] = [];
-      data.forEach(r => {
+      data.forEach((r: any) => {
         const interval = eachDayOfInterval({
           start: new Date(r.start_date),
           end: new Date(r.end_date),
@@ -66,7 +65,33 @@ export default function FitDetail() {
     }
   };
 
+  // Realtime subscription for instant updates when deals are confirmed/cancelled
+  useEffect(() => {
+    if (!id) return;
+    const channel = supabase
+      .channel(`fit-booked-${id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'fit_booked_ranges', filter: `fit_id=eq.${id}` },
+        () => { fetchBookedDates(); }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [id]);
+
   const isDateBooked = (date: Date) => bookedDates.some(d => isSameDay(d, date));
+
+  const handleDateSelect = (range: DateRange | undefined) => {
+    if (range?.from && range?.to) {
+      const selectedDays = eachDayOfInterval({ start: range.from, end: range.to });
+      if (selectedDays.some(d => isDateBooked(d))) {
+        toast({ variant: 'destructive', title: 'Unavailable dates', description: 'This outfit is already booked for the selected date. Please choose different dates.' });
+        setDateRange(undefined);
+        return;
+      }
+    }
+    setDateRange(range);
+  };
 
   const calculateTotal = () => {
     if (!dateRange?.from || !dateRange?.to || !fit) return null;
@@ -92,7 +117,7 @@ export default function FitDetail() {
     const selectedDays = eachDayOfInterval({ start: dateRange.from, end: dateRange.to });
     const hasOverlap = selectedDays.some(d => isDateBooked(d));
     if (hasOverlap) {
-      toast({ variant: 'destructive', title: 'Dates unavailable', description: 'Some selected dates are already booked.' });
+      toast({ variant: 'destructive', title: 'Dates unavailable', description: 'This outfit is already booked for the selected date. Please choose different dates.' });
       return;
     }
 
@@ -235,7 +260,7 @@ export default function FitDetail() {
                 <div className="flex-1">
                   <p className="font-medium">{fit.owner.username}</p>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    {fit.owner.location && (<><MapPin className="h-3 w-3" />{fit.owner.location}</>)}
+                    {fit.owner.location_city && (<><MapPin className="h-3 w-3" />{fit.owner.location_city}</>)}
                     {fit.owner.rating > 0 && (
                       <span className="flex items-center gap-1">
                         <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
@@ -271,7 +296,7 @@ export default function FitDetail() {
                   <Calendar
                     mode="range"
                     selected={dateRange}
-                    onSelect={setDateRange}
+                    onSelect={handleDateSelect}
                     disabled={(date) => date < new Date() || isDateBooked(date)}
                     modifiers={{ booked: bookedDates }}
                     modifiersClassNames={{ booked: 'bg-destructive/20 text-destructive line-through' }}

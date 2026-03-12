@@ -44,11 +44,9 @@ export function ConfirmDealPanel({ open, onOpenChange, rental, onConfirmed }: Co
     if (!open) return;
     const fetchBlocked = async () => {
       const { data } = await supabase
-        .from('rentals')
+        .from('fit_booked_ranges')
         .select('start_date, end_date')
-        .eq('fit_id', rental.fit_id)
-        .neq('id', rental.id)
-        .in('status', ['confirmed', 'active'] as any);
+        .eq('fit_id', rental.fit_id);
 
       if (data) {
         const dates: Date[] = [];
