@@ -252,7 +252,7 @@ export default function FitDetail() {
 
             {/* Owner Info */}
             {fit.owner && (
-              <div className="flex items-center gap-4 rounded-xl bg-card p-4">
+              <Link to={`/user/${fit.owner.id}`} className="flex items-center gap-4 rounded-xl bg-card p-4 transition-colors hover:bg-accent">
                 <Avatar className="h-12 w-12">
                   <AvatarImage src={fit.owner.avatar_url || ''} />
                   <AvatarFallback>{fit.owner.username?.charAt(0).toUpperCase()}</AvatarFallback>
@@ -269,7 +269,7 @@ export default function FitDetail() {
                     )}
                   </div>
                 </div>
-              </div>
+              </Link>
             )}
 
             <Separator className="my-6" />

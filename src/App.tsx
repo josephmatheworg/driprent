@@ -23,6 +23,7 @@ import OutfitRequests from "./pages/OutfitRequests";
 import CreateRequest from "./pages/CreateRequest";
 import RequestDetail from "./pages/RequestDetail";
 import NotFound from "./pages/NotFound";
+import UserProfile from "./pages/UserProfile";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +51,7 @@ const App = () => (
             <Route path="/requests" element={<ProfileGuard><OutfitRequests /></ProfileGuard>} />
             <Route path="/requests/create" element={<ProfileGuard><CreateRequest /></ProfileGuard>} />
             <Route path="/requests/:id" element={<ProfileGuard><RequestDetail /></ProfileGuard>} />
+            <Route path="/user/:id" element={<ProfileGuard><UserProfile /></ProfileGuard>} />
             <Route path="/how-it-works" element={<HowItWorks />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
