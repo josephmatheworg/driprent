@@ -51,6 +51,7 @@ const App = () => (
             <Route path="/requests" element={<ProfileGuard><OutfitRequests /></ProfileGuard>} />
             <Route path="/requests/create" element={<ProfileGuard><CreateRequest /></ProfileGuard>} />
             <Route path="/requests/:id" element={<ProfileGuard><RequestDetail /></ProfileGuard>} />
+            <Route path="/user/:id" element={<ProfileGuard><UserProfile /></ProfileGuard>} />
             <Route path="/how-it-works" element={<HowItWorks />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
