@@ -61,14 +61,21 @@ export function FitCard({ fit }: FitCardProps) {
             </div>
 
             {fit.owner && (
-              <div className="flex items-center gap-2">
+              <div
+                className="flex items-center gap-2 cursor-pointer"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  window.location.href = `/user/${fit.owner!.id}`;
+                }}
+              >
                 <Avatar className="h-6 w-6">
                   <AvatarImage src={fit.owner.avatar_url || ''} />
                   <AvatarFallback className="text-xs">
                     {fit.owner.username?.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <span className="text-xs text-muted-foreground">{fit.owner.username}</span>
+                <span className="text-xs text-muted-foreground hover:text-foreground transition-colors">{fit.owner.username}</span>
               </div>
             )}
           </div>
