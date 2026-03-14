@@ -23,6 +23,7 @@ import OutfitRequests from "./pages/OutfitRequests";
 import CreateRequest from "./pages/CreateRequest";
 import RequestDetail from "./pages/RequestDetail";
 import NotFound from "./pages/NotFound";
+import UserProfile from "./pages/UserProfile";
 
 const queryClient = new QueryClient();
 
