@@ -97,15 +97,30 @@ export default function RequestDetail() {
     return () => { supabase.removeChannel(channel); };
   }, [id, fetchReplies]);
 
+  const handleReplyImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast({ variant: 'destructive', title: 'File too large', description: 'Max 5MB allowed.' });
+        return;
+      }
+      setReplyImage(file);
+      setReplyImagePreview(URL.createObjectURL(file));
+    }
+  };
+
   const handleSubmitReply = async () => {
     if (!profile) {
       toast({ variant: 'destructive', title: 'Sign in required', description: 'Please sign in to reply.' });
       return;
     }
-    if (!comment.trim()) {
-      toast({ variant: 'destructive', title: 'Comment required', description: 'Please write a comment.' });
+
+    // Must attach an outfit OR upload an image
+    if (selectedFitId === 'none' && !replyImage) {
+      toast({ variant: 'destructive', title: 'Outfit image is required to respond.', description: 'Please attach one of your listed outfits or upload an outfit image.' });
       return;
     }
+
     if (comment.trim().length > 500) {
       toast({ variant: 'destructive', title: 'Too long', description: 'Comment must be under 500 characters.' });
       return;
@@ -113,21 +128,40 @@ export default function RequestDetail() {
 
     setSubmitting(true);
     try {
+      let uploadedImageUrl: string | null = null;
+
+      // Upload image if provided (and no fit selected)
+      if (replyImage && selectedFitId === 'none') {
+        setUploading(true);
+        const ext = replyImage.name.split('.').pop();
+        const filePath = `${profile.id}/${Date.now()}.${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from('requests')
+          .upload(filePath, replyImage);
+        if (uploadError) throw uploadError;
+        const { data: urlData } = supabase.storage.from('requests').getPublicUrl(filePath);
+        uploadedImageUrl = urlData.publicUrl;
+        setUploading(false);
+      }
+
       const { error } = await supabase.from('request_replies').insert({
         request_id: id!,
         user_id: profile.id,
-        comment: comment.trim(),
+        comment: comment.trim() || (selectedFitId !== 'none' ? 'Check out my outfit!' : 'Here is my outfit suggestion.'),
         outfit_id: selectedFitId !== 'none' ? selectedFitId : null,
       });
       if (error) throw error;
       setComment('');
       setSelectedFitId('none');
+      setReplyImage(null);
+      setReplyImagePreview(null);
       toast({ title: 'Reply posted!' });
       await fetchReplies();
     } catch (err: any) {
       toast({ variant: 'destructive', title: 'Failed', description: err.message });
     } finally {
       setSubmitting(false);
+      setUploading(false);
     }
   };
 
