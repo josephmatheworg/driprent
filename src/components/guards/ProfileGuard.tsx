@@ -25,9 +25,13 @@ export function ProfileGuard({ children }: ProfileGuardProps) {
     return <Navigate to="/profile-setup" replace />;
   }
 
-  // Profile not yet loaded — wait
+  // Profile not yet loaded — show loading spinner instead of redirecting
   if (!profile) {
-    return <Navigate to="/profile-setup" replace />;
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
   }
 
   return <>{children}</>;

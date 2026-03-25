@@ -18,7 +18,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import type { OutfitRequest, RequestReply, Fit } from '@/types/database';
-import { Calendar, MapPin, IndianRupee, MessageSquare, Clock, ArrowLeft, Send, ExternalLink } from 'lucide-react';
+import { Calendar, MapPin, IndianRupee, MessageSquare, Clock, ArrowLeft, Send, ExternalLink, ImagePlus } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 export default function RequestDetail() {
@@ -36,6 +36,9 @@ export default function RequestDetail() {
   const [comment, setComment] = useState('');
   const [selectedFitId, setSelectedFitId] = useState<string>('none');
   const [submitting, setSubmitting] = useState(false);
+  const [replyImage, setReplyImage] = useState<File | null>(null);
+  const [replyImagePreview, setReplyImagePreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const fetchRequest = useCallback(async () => {
     if (!id) return;
@@ -94,15 +97,30 @@ export default function RequestDetail() {
     return () => { supabase.removeChannel(channel); };
   }, [id, fetchReplies]);
 
+  const handleReplyImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast({ variant: 'destructive', title: 'File too large', description: 'Max 5MB allowed.' });
+        return;
+      }
+      setReplyImage(file);
+      setReplyImagePreview(URL.createObjectURL(file));
+    }
+  };
+
   const handleSubmitReply = async () => {
     if (!profile) {
       toast({ variant: 'destructive', title: 'Sign in required', description: 'Please sign in to reply.' });
       return;
     }
-    if (!comment.trim()) {
-      toast({ variant: 'destructive', title: 'Comment required', description: 'Please write a comment.' });
+
+    // Must attach an outfit OR upload an image
+    if (selectedFitId === 'none' && !replyImage) {
+      toast({ variant: 'destructive', title: 'Outfit image is required to respond.', description: 'Please attach one of your listed outfits or upload an outfit image.' });
       return;
     }
+
     if (comment.trim().length > 500) {
       toast({ variant: 'destructive', title: 'Too long', description: 'Comment must be under 500 characters.' });
       return;
@@ -110,21 +128,40 @@ export default function RequestDetail() {
 
     setSubmitting(true);
     try {
+      let uploadedImageUrl: string | null = null;
+
+      // Upload image if provided (and no fit selected)
+      if (replyImage && selectedFitId === 'none') {
+        setUploading(true);
+        const ext = replyImage.name.split('.').pop();
+        const filePath = `${profile.id}/${Date.now()}.${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from('requests')
+          .upload(filePath, replyImage);
+        if (uploadError) throw uploadError;
+        const { data: urlData } = supabase.storage.from('requests').getPublicUrl(filePath);
+        uploadedImageUrl = urlData.publicUrl;
+        setUploading(false);
+      }
+
       const { error } = await supabase.from('request_replies').insert({
         request_id: id!,
         user_id: profile.id,
-        comment: comment.trim(),
+        comment: comment.trim() || (selectedFitId !== 'none' ? 'Check out my outfit!' : 'Here is my outfit suggestion.'),
         outfit_id: selectedFitId !== 'none' ? selectedFitId : null,
       });
       if (error) throw error;
       setComment('');
       setSelectedFitId('none');
+      setReplyImage(null);
+      setReplyImagePreview(null);
       toast({ title: 'Reply posted!' });
       await fetchReplies();
     } catch (err: any) {
       toast({ variant: 'destructive', title: 'Failed', description: err.message });
     } finally {
       setSubmitting(false);
+      setUploading(false);
     }
   };
 
@@ -238,25 +275,18 @@ export default function RequestDetail() {
               {/* Reply Form */}
               {user && !isOwner && request.status === 'open' && (
                 <div className="mt-6 rounded-xl border border-border bg-card p-4 space-y-4">
-                  <div>
-                    <Label>Your Comment</Label>
-                    <Textarea
-                      placeholder="I have something very similar to this outfit..."
-                      value={comment}
-                      onChange={(e) => setComment(e.target.value)}
-                      className="mt-1.5"
-                    />
-                  </div>
+                  <p className="text-sm font-medium text-foreground">Respond with your outfit</p>
+                  <p className="text-xs text-muted-foreground">You must attach one of your listed outfits to respond.</p>
 
-                  {myFits.length > 0 && (
+                  {myFits.length > 0 ? (
                     <div>
-                      <Label>Attach One of Your Outfits (optional)</Label>
+                      <Label>Select Your Outfit *</Label>
                       <Select value={selectedFitId} onValueChange={setSelectedFitId}>
                         <SelectTrigger className="mt-1.5">
                           <SelectValue placeholder="Select an outfit" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="none">No outfit attached</SelectItem>
+                          <SelectItem value="none">— Select an outfit —</SelectItem>
                           {myFits.map((fit) => (
                             <SelectItem key={fit.id} value={fit.id}>
                               {fit.title} — ₹{fit.daily_price}/day
@@ -264,6 +294,13 @@ export default function RequestDetail() {
                           ))}
                         </SelectContent>
                       </Select>
+                    </div>
+                  ) : (
+                    <div className="rounded-lg border border-border bg-muted/50 p-4 text-center">
+                      <p className="text-sm text-muted-foreground">You don't have any listed outfits yet.</p>
+                      <Button asChild variant="outline" size="sm" className="mt-2">
+                        <Link to="/upload">Upload an Outfit</Link>
+                      </Button>
                     </div>
                   )}
 
@@ -282,9 +319,23 @@ export default function RequestDetail() {
                     );
                   })()}
 
-                  <Button onClick={handleSubmitReply} disabled={submitting} variant="terracotta">
+                  <div>
+                    <Label>Message (optional)</Label>
+                    <Textarea
+                      placeholder="Add a message about your outfit..."
+                      value={comment}
+                      onChange={(e) => setComment(e.target.value)}
+                      className="mt-1.5"
+                    />
+                  </div>
+
+                  <Button
+                    onClick={handleSubmitReply}
+                    disabled={submitting || uploading || (selectedFitId === 'none' && myFits.length > 0)}
+                    variant="terracotta"
+                  >
                     <Send className="mr-2 h-4 w-4" />
-                    {submitting ? 'Posting...' : 'Submit Reply'}
+                    {submitting || uploading ? 'Posting...' : 'Submit Reply'}
                   </Button>
                 </div>
               )}
