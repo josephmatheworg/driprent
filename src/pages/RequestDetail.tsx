@@ -36,6 +36,9 @@ export default function RequestDetail() {
   const [comment, setComment] = useState('');
   const [selectedFitId, setSelectedFitId] = useState<string>('none');
   const [submitting, setSubmitting] = useState(false);
+  const [replyImage, setReplyImage] = useState<File | null>(null);
+  const [replyImagePreview, setReplyImagePreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const fetchRequest = useCallback(async () => {
     if (!id) return;
