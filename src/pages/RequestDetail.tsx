@@ -275,25 +275,18 @@ export default function RequestDetail() {
               {/* Reply Form */}
               {user && !isOwner && request.status === 'open' && (
                 <div className="mt-6 rounded-xl border border-border bg-card p-4 space-y-4">
-                  <div>
-                    <Label>Your Comment</Label>
-                    <Textarea
-                      placeholder="I have something very similar to this outfit..."
-                      value={comment}
-                      onChange={(e) => setComment(e.target.value)}
-                      className="mt-1.5"
-                    />
-                  </div>
+                  <p className="text-sm font-medium text-foreground">Respond with your outfit</p>
+                  <p className="text-xs text-muted-foreground">You must attach one of your listed outfits to respond.</p>
 
-                  {myFits.length > 0 && (
+                  {myFits.length > 0 ? (
                     <div>
-                      <Label>Attach One of Your Outfits (optional)</Label>
+                      <Label>Select Your Outfit *</Label>
                       <Select value={selectedFitId} onValueChange={setSelectedFitId}>
                         <SelectTrigger className="mt-1.5">
                           <SelectValue placeholder="Select an outfit" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="none">No outfit attached</SelectItem>
+                          <SelectItem value="none">— Select an outfit —</SelectItem>
                           {myFits.map((fit) => (
                             <SelectItem key={fit.id} value={fit.id}>
                               {fit.title} — ₹{fit.daily_price}/day
@@ -301,6 +294,13 @@ export default function RequestDetail() {
                           ))}
                         </SelectContent>
                       </Select>
+                    </div>
+                  ) : (
+                    <div className="rounded-lg border border-border bg-muted/50 p-4 text-center">
+                      <p className="text-sm text-muted-foreground">You don't have any listed outfits yet.</p>
+                      <Button asChild variant="outline" size="sm" className="mt-2">
+                        <Link to="/upload">Upload an Outfit</Link>
+                      </Button>
                     </div>
                   )}
 
@@ -319,9 +319,23 @@ export default function RequestDetail() {
                     );
                   })()}
 
-                  <Button onClick={handleSubmitReply} disabled={submitting} variant="terracotta">
+                  <div>
+                    <Label>Message (optional)</Label>
+                    <Textarea
+                      placeholder="Add a message about your outfit..."
+                      value={comment}
+                      onChange={(e) => setComment(e.target.value)}
+                      className="mt-1.5"
+                    />
+                  </div>
+
+                  <Button
+                    onClick={handleSubmitReply}
+                    disabled={submitting || uploading || (selectedFitId === 'none' && myFits.length > 0)}
+                    variant="terracotta"
+                  >
                     <Send className="mr-2 h-4 w-4" />
-                    {submitting ? 'Posting...' : 'Submit Reply'}
+                    {submitting || uploading ? 'Posting...' : 'Submit Reply'}
                   </Button>
                 </div>
               )}
