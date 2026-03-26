@@ -15,6 +15,8 @@ export interface Profile {
   location_city: string | null;
   location_state: string | null;
   location_country: string | null;
+  latitude: number | null;
+  longitude: number | null;
   phone: string | null;
   date_of_birth: string | null;
   gender: string | null;

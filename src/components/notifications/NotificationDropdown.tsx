@@ -144,8 +144,17 @@ export function NotificationDropdown({ unreadCount, onRead }: NotificationDropdo
   };
 
   const getLink = (n: Notification) => {
-    if (n.type === 'message') return '/messages';
+    const meta = n.metadata || {};
+    if (n.type === 'message') {
+      const convId = meta.conversation_id as string;
+      return convId ? `/messages?conversation=${convId}` : '/messages';
+    }
+    if (n.type === 'request_reply') {
+      const reqId = meta.request_id as string;
+      return reqId ? `/request/${reqId}` : '/outfit-requests';
+    }
     if (n.type === 'rental_approved' || n.type === 'rental_rejected') return '/rentals';
+    if (n.type === 'rental_confirmed' || n.type === 'rental_completed') return '/rentals';
     return '#';
   };
 
