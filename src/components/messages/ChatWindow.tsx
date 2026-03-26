@@ -67,6 +67,17 @@ export function ChatWindow({ conversationId, otherUser }: ChatWindowProps) {
 
   useEffect(() => {
     fetchRental();
+
+    // Realtime: re-fetch rental when status changes
+    if (!profile) return;
+    const channel = supabase
+      .channel(`rental-status-${profile.id}-${otherUser.id}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rentals' }, () => {
+        fetchRental();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, [fetchRental, conversationId]);
 
   const handleSend = async () => {
