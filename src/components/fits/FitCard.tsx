@@ -62,7 +62,14 @@ export function FitCard({ fit }: FitCardProps) {
             )}
           </div>
 
-          <p className="text-sm capitalize text-muted-foreground">{fit.category}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-sm capitalize text-muted-foreground">{fit.category}</p>
+            {distanceText && (
+              <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
+                <MapPin className="h-3 w-3" />{distanceText}
+              </span>
+            )}
+          </div>
 
           <div className="mt-3 flex items-center justify-between">
             <div>
