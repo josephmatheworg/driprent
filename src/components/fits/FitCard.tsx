@@ -2,8 +2,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Star } from 'lucide-react';
+import { Star, MapPin } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { haversineDistance, formatDistance } from '@/lib/distance';
 import type { Fit } from '@/types/database';
 
 interface FitCardProps {
@@ -13,6 +14,15 @@ interface FitCardProps {
 export function FitCard({ fit }: FitCardProps) {
   const primaryImage = fit.images?.[0] || '/placeholder.svg';
   const { profile } = useAuth();
+
+  const ownerLat = fit.owner?.latitude;
+  const ownerLng = fit.owner?.longitude;
+  const myLat = profile?.latitude;
+  const myLng = profile?.longitude;
+
+  const distanceText = (ownerLat && ownerLng && myLat && myLng)
+    ? formatDistance(haversineDistance(myLat, myLng, ownerLat, ownerLng))
+    : null;
 
   return (
     <Link to={`/fit/${fit.id}`}>
