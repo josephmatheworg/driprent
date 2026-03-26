@@ -60,7 +60,12 @@ export function useMessages(conversationId: string | null) {
           filter: `conversation_id=eq.${conversationId}`,
         },
         (payload) => {
-          setMessages(prev => [...prev, payload.new as Message]);
+          const newMsg = payload.new as Message;
+          setMessages(prev => {
+            // Prevent duplicates
+            if (prev.some(m => m.id === newMsg.id)) return prev;
+            return [...prev, newMsg];
+          });
           markAsRead();
         }
       )
