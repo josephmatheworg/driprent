@@ -34,39 +34,31 @@ export function ChatWindow({ conversationId, otherUser }: ChatWindowProps) {
   const fetchRental = useCallback(async () => {
     if (!profile) return;
     
-    // First check for completed rental (to lock chat)
-    const { data: completedData } = await supabase
-      .from('rentals')
-      .select('id, status')
-      .or(`and(owner_id.eq.${profile.id},renter_id.eq.${otherUser.id}),and(owner_id.eq.${otherUser.id},renter_id.eq.${profile.id})`)
-      .in('status', ['completed', 'returned'] as any)
-      .order('updated_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    // Fetch the most relevant active rental
     const { data } = await supabase
       .from('rentals')
-      .select('id, fit_id, start_date, end_date, owner_id, renter_id, status, fits(title), owner:profiles!rentals_owner_id_fkey(latitude, longitude)')
+      .select('id, fit_id, start_date, end_date, owner_id, renter_id, status, fits(title), owner:profiles!rentals_owner_id_fkey(latitude, longitude, phone)')
       .or(`and(owner_id.eq.${profile.id},renter_id.eq.${otherUser.id}),and(owner_id.eq.${otherUser.id},renter_id.eq.${profile.id})`)
-      .in('status', ['accepted', 'confirmed', 'active'] as any)
-      .order('created_at', { ascending: false })
+      .in('status', ['accepted', 'confirmed', 'active', 'completed', 'returned'] as any)
+      .order('updated_at', { ascending: false })
       .limit(1)
       .maybeSingle();
 
     if (data) {
       const ownerProfile = (data as any).owner;
-      setRental({
-        ...data,
-        fit_title: (data as any).fits?.title,
-        owner_latitude: ownerProfile?.latitude ?? null,
-        owner_longitude: ownerProfile?.longitude ?? null,
-      });
-      setChatLocked(false);
-    } else if (completedData) {
-      // No active rental but there is a completed one — lock chat
-      setRental(null);
-      setChatLocked(true);
+      const isCompleted = ['completed', 'returned'].includes((data as any).status);
+      if (isCompleted) {
+        setRental(null);
+        setChatLocked(true);
+      } else {
+        setRental({
+          ...data,
+          fit_title: (data as any).fits?.title,
+          owner_latitude: ownerProfile?.latitude ?? null,
+          owner_longitude: ownerProfile?.longitude ?? null,
+          owner_phone: ownerProfile?.phone ?? null,
+        });
+        setChatLocked(false);
+      }
     } else {
       setRental(null);
       setChatLocked(false);
