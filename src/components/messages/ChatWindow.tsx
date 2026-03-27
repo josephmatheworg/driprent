@@ -28,6 +28,8 @@ export function ChatWindow({ conversationId, otherUser }: ChatWindowProps) {
   const [showConfirmDeal, setShowConfirmDeal] = useState(false);
   const [chatLocked, setChatLocked] = useState(false);
   const [lockMessage, setLockMessage] = useState('Rental completed. Request again to continue.');
+  const [showReviewDialog, setShowReviewDialog] = useState(false);
+  const [hasReviewed, setHasReviewed] = useState(false);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
