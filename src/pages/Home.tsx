@@ -245,7 +245,7 @@ export default function Home() {
             {recentLoading
               ? Array.from({ length: 8 }).map((_, i) => <FitCardSkeleton key={i} />)
               : recentFits && recentFits.length > 0
-                ? recentFits.map((fit) => <HomeFitCard key={fit.id} fit={fit} />)
+                ? recentFits.map((fit) => <HomeFitCard key={fit.id} fit={fit} myLat={myLat} myLng={myLng} />)
                 : (
                   <div className="col-span-full py-12 text-center text-muted-foreground">
                     No fits listed yet. Be the first to upload!
