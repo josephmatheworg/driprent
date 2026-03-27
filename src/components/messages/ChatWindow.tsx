@@ -138,6 +138,8 @@ export function ChatWindow({ conversationId, otherUser }: ChatWindowProps) {
   };
 
   const isOwner = rental && profile && rental.owner_id === profile.id;
+  const isRenter = rental && profile && rental.renter_id === profile.id;
+  const canReview = isRenter && rental && ['completed', 'returned'].includes(rental.status) && !hasReviewed;
 
   return (
     <div className="flex h-full flex-col">
