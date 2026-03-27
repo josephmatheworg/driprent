@@ -272,7 +272,7 @@ export default function Home() {
                       </div>
                     ))
                   : trendingFits && trendingFits.length > 0
-                    ? trendingFits.map((fit) => <TrendingFitCard key={fit.id} fit={fit} />)
+                    ? trendingFits.map((fit) => <TrendingFitCard key={fit.id} fit={fit} myLat={myLat} myLng={myLng} />)
                     : (
                       <div className="py-12 text-center text-muted-foreground w-full">
                         No trending fits yet.
