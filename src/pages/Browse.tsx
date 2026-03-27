@@ -15,11 +15,14 @@ import {
 import { Slider } from '@/components/ui/slider';
 import { supabase } from '@/integrations/supabase/client';
 import { CATEGORIES, SIZES, type Fit, type FitCategory, type FitSize } from '@/types/database';
-import { Search, SlidersHorizontal, X, Camera, ImageIcon } from 'lucide-react';
+import { Search, SlidersHorizontal, X, Camera, ImageIcon, MapPin } from 'lucide-react';
 import { ImageSearchModal } from '@/components/browse/ImageSearchModal';
+import { useAuth } from '@/contexts/AuthContext';
+import { haversineDistance, formatDistance } from '@/lib/distance';
 
 export default function Browse() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { profile } = useAuth();
   const [fits, setFits] = useState<Fit[]>([]);
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
@@ -31,10 +34,12 @@ export default function Browse() {
   const [category, setCategory] = useState<string>(searchParams.get('category') || 'all');
   const [size, setSize] = useState<string>(searchParams.get('size') || 'all');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 500]);
+  const [distanceFilter, setDistanceFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<string>('newest');
 
   useEffect(() => {
     fetchFits();
-  }, [category, size, priceRange]);
+  }, [category, size, priceRange, distanceFilter, sortBy, profile?.latitude]);
 
   const fetchFits = async () => {
     setLoading(true);
@@ -65,7 +70,40 @@ export default function Browse() {
     const { data, error } = await query;
 
     if (!error && data) {
-      setFits(data as unknown as Fit[]);
+      let results = data as unknown as Fit[];
+
+      // Client-side distance filtering & sorting
+      if (profile?.latitude && profile?.longitude) {
+        results = results.map((fit: any) => {
+          const ownerLat = fit.owner?.latitude;
+          const ownerLng = fit.owner?.longitude;
+          if (ownerLat && ownerLng) {
+            const dist = haversineDistance(profile.latitude!, profile.longitude!, ownerLat, ownerLng);
+            return { ...fit, _distance: dist };
+          }
+          return { ...fit, _distance: null };
+        });
+
+        if (distanceFilter !== 'all') {
+          const maxKm = parseInt(distanceFilter);
+          results = results.filter((f: any) => f._distance !== null && f._distance <= maxKm);
+        }
+      }
+
+      // Sorting
+      if (sortBy === 'nearest' && profile?.latitude) {
+        results.sort((a: any, b: any) => {
+          if (a._distance === null) return 1;
+          if (b._distance === null) return -1;
+          return a._distance - b._distance;
+        });
+      } else if (sortBy === 'price_low') {
+        results.sort((a, b) => a.daily_price - b.daily_price);
+      } else if (sortBy === 'price_high') {
+        results.sort((a, b) => b.daily_price - a.daily_price);
+      }
+
+      setFits(results);
     }
     setLoading(false);
   };
@@ -80,6 +118,8 @@ export default function Browse() {
     setCategory('all');
     setSize('all');
     setPriceRange([0, 500]);
+    setDistanceFilter('all');
+    setSortBy('newest');
     setSearchParams({});
     setImageSearchResults(null);
   };
@@ -92,7 +132,7 @@ export default function Browse() {
     setImageSearchResults(null);
   };
 
-  const hasActiveFilters = category !== 'all' || size !== 'all' || search || priceRange[0] > 0 || priceRange[1] < 500;
+  const hasActiveFilters = category !== 'all' || size !== 'all' || search || priceRange[0] > 0 || priceRange[1] < 500 || distanceFilter !== 'all' || sortBy !== 'newest';
   
   const displayFits = imageSearchResults || fits;
 
@@ -171,7 +211,7 @@ export default function Browse() {
               )}
             </div>
 
-            <div className="grid gap-6 md:grid-cols-4">
+            <div className="grid gap-6 md:grid-cols-3 lg:grid-cols-6">
               <div>
                 <Label>Category</Label>
                 <Select value={category} onValueChange={setCategory}>
@@ -206,7 +246,7 @@ export default function Browse() {
                 </Select>
               </div>
 
-              <div className="md:col-span-2">
+              <div>
                 <Label>Price Range: ${priceRange[0]} - ${priceRange[1]}/day</Label>
                 <Slider
                   value={priceRange}
@@ -216,6 +256,42 @@ export default function Browse() {
                   step={10}
                   className="mt-4"
                 />
+              </div>
+
+              <div>
+                <Label>Distance</Label>
+                <Select value={distanceFilter} onValueChange={setDistanceFilter}>
+                  <SelectTrigger className="mt-1.5">
+                    <SelectValue placeholder="Any distance" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Any Distance</SelectItem>
+                    <SelectItem value="2">Within 2 km</SelectItem>
+                    <SelectItem value="5">Within 5 km</SelectItem>
+                    <SelectItem value="10">Within 10 km</SelectItem>
+                    <SelectItem value="20">Within 20 km</SelectItem>
+                  </SelectContent>
+                </Select>
+                {!profile?.latitude && (
+                  <p className="mt-1 text-xs text-muted-foreground flex items-center gap-1">
+                    <MapPin className="h-3 w-3" /> Enable location in profile for distance filter
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <Label>Sort By</Label>
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="mt-1.5">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="newest">Newest First</SelectItem>
+                    <SelectItem value="nearest">Nearest First</SelectItem>
+                    <SelectItem value="price_low">Price: Low to High</SelectItem>
+                    <SelectItem value="price_high">Price: High to Low</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>

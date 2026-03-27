@@ -15,14 +15,17 @@ export function FitCard({ fit }: FitCardProps) {
   const primaryImage = fit.images?.[0] || '/placeholder.svg';
   const { profile } = useAuth();
 
+  const fitAny = fit as any;
   const ownerLat = fit.owner?.latitude;
   const ownerLng = fit.owner?.longitude;
   const myLat = profile?.latitude;
   const myLng = profile?.longitude;
 
-  const distanceText = (ownerLat && ownerLng && myLat && myLng)
-    ? formatDistance(haversineDistance(myLat, myLng, ownerLat, ownerLng))
-    : null;
+  const distanceText = fitAny._distance != null
+    ? formatDistance(fitAny._distance)
+    : (ownerLat && ownerLng && myLat && myLng)
+      ? formatDistance(haversineDistance(myLat, myLng, ownerLat, ownerLng))
+      : null;
 
   return (
     <Link to={`/fit/${fit.id}`}>
