@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ConfirmDealPanel } from '@/components/chat/ConfirmDealPanel';
 import { ChatSettingsPanel } from '@/components/chat/ChatSettingsPanel';
 import { DealSummaryCard } from '@/components/chat/DealSummaryCard';
+import { ReviewDialog } from '@/components/reviews/ReviewDialog';
 
 interface ChatWindowProps {
   conversationId: string;
