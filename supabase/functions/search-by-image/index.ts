@@ -108,50 +108,45 @@ Return ONLY valid JSON, no markdown or explanation.`
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Build search query
+    // Build search query - relaxed: try category + colors first, fallback to broader
     let query = supabase
       .from('fits')
       .select(`
         *,
-        owner:profiles!fits_owner_id_fkey(id, username, avatar_url, rating)
+        owner:profiles!fits_owner_id_fkey(id, username, avatar_url, rating, latitude, longitude)
       `)
       .eq('is_available', true);
 
-    // Filter by category if detected
+    // First try: category match
     if (features.category) {
       query = query.eq('category', features.category);
     }
 
-    // Search by color in description or title
-    if (features.colors && features.colors.length > 0) {
-      const colorConditions = features.colors
-        .map((c: string) => `description.ilike.%${c}%,title.ilike.%${c}%,color.ilike.%${c}%`)
-        .join(',');
-      query = query.or(colorConditions);
-    }
+    const { data: categoryFits, error: catError } = await query.limit(20);
 
-    // Also search by keywords
-    if (features.style_keywords && features.style_keywords.length > 0) {
-      const keywordConditions = features.style_keywords
-        .slice(0, 3)
-        .map((k: string) => `description.ilike.%${k}%,title.ilike.%${k}%`)
-        .join(',');
-      if (keywordConditions) {
-        query = query.or(keywordConditions);
+    let resultFits = categoryFits || [];
+
+    // If too few results from category, broaden search
+    if (resultFits.length < 3) {
+      const broadQuery = supabase
+        .from('fits')
+        .select(`
+          *,
+          owner:profiles!fits_owner_id_fkey(id, username, avatar_url, rating, latitude, longitude)
+        `)
+        .eq('is_available', true)
+        .limit(20);
+
+      const { data: broadFits } = await broadQuery;
+      if (broadFits && broadFits.length > resultFits.length) {
+        resultFits = broadFits;
       }
-    }
-
-    const { data: fits, error } = await query.limit(20);
-
-    if (error) {
-      console.error("Database error:", error);
-      throw new Error("Failed to search fits");
     }
 
     return new Response(
       JSON.stringify({ 
         features,
-        fits: fits || []
+        fits: resultFits
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
