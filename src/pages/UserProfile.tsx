@@ -112,6 +112,10 @@ export default function UserProfile() {
   const overallRating = profileData.rating ?? 0;
   const totalReviews = profileData.total_reviews ?? 0;
 
+  const distanceText = (profileData.latitude && profileData.longitude && myProfile?.latitude && myProfile?.longitude)
+    ? formatDistance(haversineDistance(myProfile.latitude, myProfile.longitude, profileData.latitude, profileData.longitude))
+    : null;
+
   return (
     <Layout>
       <div className="container mx-auto max-w-4xl px-4 py-8">
