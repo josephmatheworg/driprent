@@ -8,9 +8,12 @@ import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { Star, MapPin } from 'lucide-react';
 import type { Profile, Fit, Review } from '@/types/database';
+import { useAuth } from '@/contexts/AuthContext';
+import { haversineDistance, formatDistance } from '@/lib/distance';
 
 export default function UserProfile() {
   const { id } = useParams<{ id: string }>();
+  const { profile: myProfile } = useAuth();
   const [profileData, setProfileData] = useState<Profile | null>(null);
   const [fits, setFits] = useState<Fit[]>([]);
   const [reviews, setReviews] = useState<(Review & { fit_title?: string })[]>([]);
@@ -109,6 +112,10 @@ export default function UserProfile() {
   const overallRating = profileData.rating ?? 0;
   const totalReviews = profileData.total_reviews ?? 0;
 
+  const distanceText = (profileData.latitude && profileData.longitude && myProfile?.latitude && myProfile?.longitude)
+    ? formatDistance(haversineDistance(myProfile.latitude, myProfile.longitude, profileData.latitude, profileData.longitude))
+    : null;
+
   return (
     <Layout>
       <div className="container mx-auto max-w-4xl px-4 py-8">
@@ -130,6 +137,12 @@ export default function UserProfile() {
                 <span className="flex items-center gap-1">
                   <MapPin className="h-4 w-4" />
                   {displayLocation}
+                </span>
+              )}
+              {distanceText && (
+                <span className="flex items-center gap-1">
+                  <MapPin className="h-4 w-4" />
+                  {distanceText}
                 </span>
               )}
               <span className="flex items-center gap-1">

@@ -7,6 +7,9 @@ import { CATEGORIES } from '@/types/database';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { useAuth } from '@/contexts/AuthContext';
+import { haversineDistance, formatDistance } from '@/lib/distance';
+import { MapPin } from 'lucide-react';
 import heroFashion from '@/assets/hero-fashion.jpg';
 import categoryDresses from '@/assets/category-dresses.jpg';
 import categorySuits from '@/assets/category-suits.jpg';
@@ -45,10 +48,16 @@ function FitCardSkeleton() {
   );
 }
 
-function HomeFitCard({ fit }: { fit: any }) {
+function HomeFitCard({ fit, myLat, myLng }: { fit: any; myLat?: number | null; myLng?: number | null }) {
   const imageUrl = fit.images?.[0] || '/placeholder.svg';
   const ownerUsername = fit.profiles?.username || 'Unknown';
   const ownerAvatar = fit.profiles?.avatar_url || '';
+  const ownerLat = fit.profiles?.latitude;
+  const ownerLng = fit.profiles?.longitude;
+
+  const distanceText = (ownerLat && ownerLng && myLat && myLng)
+    ? formatDistance(haversineDistance(myLat, myLng, ownerLat, ownerLng))
+    : null;
 
   return (
     <div className="group overflow-hidden rounded-2xl border border-border bg-card shadow-card transition-all duration-300 hover:shadow-card-hover hover:border-primary/30">
@@ -71,14 +80,21 @@ function HomeFitCard({ fit }: { fit: any }) {
             {fit.title}
           </h3>
         </Link>
-        <div className="mt-2 flex items-center gap-2">
-          <Avatar className="h-5 w-5">
-            <AvatarImage src={ownerAvatar} />
-            <AvatarFallback className="text-[10px] bg-primary text-primary-foreground">
-              {ownerUsername.charAt(0).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-          <span className="text-xs text-muted-foreground truncate">{ownerUsername}</span>
+        <div className="mt-2 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <Avatar className="h-5 w-5 shrink-0">
+              <AvatarImage src={ownerAvatar} />
+              <AvatarFallback className="text-[10px] bg-primary text-primary-foreground">
+                {ownerUsername.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <span className="text-xs text-muted-foreground truncate">{ownerUsername}</span>
+          </div>
+          {distanceText && (
+            <span className="flex items-center gap-0.5 text-xs text-muted-foreground shrink-0">
+              <MapPin className="h-3 w-3" />{distanceText}
+            </span>
+          )}
         </div>
         <Button variant="default" size="sm" className="mt-3 w-full" asChild>
           <Link to={`/fit/${fit.id}`}>Rent Fit</Link>
@@ -88,10 +104,16 @@ function HomeFitCard({ fit }: { fit: any }) {
   );
 }
 
-function TrendingFitCard({ fit }: { fit: any }) {
+function TrendingFitCard({ fit, myLat, myLng }: { fit: any; myLat?: number | null; myLng?: number | null }) {
   const imageUrl = fit.images?.[0] || '/placeholder.svg';
   const ownerUsername = fit.profiles?.username || 'Unknown';
   const ownerAvatar = fit.profiles?.avatar_url || '';
+  const ownerLat = fit.profiles?.latitude;
+  const ownerLng = fit.profiles?.longitude;
+
+  const distanceText = (ownerLat && ownerLng && myLat && myLng)
+    ? formatDistance(haversineDistance(myLat, myLng, ownerLat, ownerLng))
+    : null;
 
   return (
     <div className="group w-56 shrink-0 overflow-hidden rounded-2xl border border-border bg-card shadow-card transition-all duration-300 hover:shadow-card-hover hover:border-primary/30 sm:w-64">
@@ -105,12 +127,19 @@ function TrendingFitCard({ fit }: { fit: any }) {
       </Link>
       <div className="p-3">
         <h3 className="font-medium text-foreground line-clamp-1 text-sm">{fit.title}</h3>
-        <div className="mt-1.5 flex items-center gap-2">
-          <Avatar className="h-4 w-4">
-            <AvatarImage src={ownerAvatar} />
-            <AvatarFallback className="text-[8px] bg-primary text-primary-foreground">{ownerUsername.charAt(0).toUpperCase()}</AvatarFallback>
-          </Avatar>
-          <span className="text-xs text-muted-foreground truncate">{ownerUsername}</span>
+        <div className="mt-1.5 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <Avatar className="h-4 w-4 shrink-0">
+              <AvatarImage src={ownerAvatar} />
+              <AvatarFallback className="text-[8px] bg-primary text-primary-foreground">{ownerUsername.charAt(0).toUpperCase()}</AvatarFallback>
+            </Avatar>
+            <span className="text-xs text-muted-foreground truncate">{ownerUsername}</span>
+          </div>
+          {distanceText && (
+            <span className="flex items-center gap-0.5 text-xs text-muted-foreground shrink-0">
+              <MapPin className="h-3 w-3" />{distanceText}
+            </span>
+          )}
         </div>
       </div>
     </div>
@@ -139,12 +168,16 @@ function CommunityCard({ fit }: { fit: any }) {
 }
 
 export default function Home() {
+  const { profile } = useAuth();
+  const myLat = profile?.latitude;
+  const myLng = profile?.longitude;
+
   const { data: recentFits, isLoading: recentLoading } = useQuery({
     queryKey: ['recent-fits'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('fits')
-        .select('*, profiles!fits_owner_id_fkey(username, avatar_url)')
+        .select('*, profiles!fits_owner_id_fkey(username, avatar_url, latitude, longitude)')
         .eq('is_available', true)
         .order('created_at', { ascending: false })
         .limit(8);
@@ -158,7 +191,7 @@ export default function Home() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('fits')
-        .select('*, profiles!fits_owner_id_fkey(username, avatar_url)')
+        .select('*, profiles!fits_owner_id_fkey(username, avatar_url, latitude, longitude)')
         .eq('is_available', true)
         .order('total_rentals', { ascending: false })
         .limit(10);
@@ -172,7 +205,7 @@ export default function Home() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('fits')
-        .select('*, profiles!fits_owner_id_fkey(username, avatar_url)')
+        .select('*, profiles!fits_owner_id_fkey(username, avatar_url, latitude, longitude)')
         .eq('is_available', true)
         .limit(20);
       if (error) throw error;
@@ -212,7 +245,7 @@ export default function Home() {
             {recentLoading
               ? Array.from({ length: 8 }).map((_, i) => <FitCardSkeleton key={i} />)
               : recentFits && recentFits.length > 0
-                ? recentFits.map((fit) => <HomeFitCard key={fit.id} fit={fit} />)
+                ? recentFits.map((fit) => <HomeFitCard key={fit.id} fit={fit} myLat={myLat} myLng={myLng} />)
                 : (
                   <div className="col-span-full py-12 text-center text-muted-foreground">
                     No fits listed yet. Be the first to upload!
@@ -239,7 +272,7 @@ export default function Home() {
                       </div>
                     ))
                   : trendingFits && trendingFits.length > 0
-                    ? trendingFits.map((fit) => <TrendingFitCard key={fit.id} fit={fit} />)
+                    ? trendingFits.map((fit) => <TrendingFitCard key={fit.id} fit={fit} myLat={myLat} myLng={myLng} />)
                     : (
                       <div className="py-12 text-center text-muted-foreground w-full">
                         No trending fits yet.
