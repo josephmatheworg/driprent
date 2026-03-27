@@ -168,12 +168,16 @@ function CommunityCard({ fit }: { fit: any }) {
 }
 
 export default function Home() {
+  const { profile } = useAuth();
+  const myLat = profile?.latitude;
+  const myLng = profile?.longitude;
+
   const { data: recentFits, isLoading: recentLoading } = useQuery({
     queryKey: ['recent-fits'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('fits')
-        .select('*, profiles!fits_owner_id_fkey(username, avatar_url)')
+        .select('*, profiles!fits_owner_id_fkey(username, avatar_url, latitude, longitude)')
         .eq('is_available', true)
         .order('created_at', { ascending: false })
         .limit(8);
@@ -187,7 +191,7 @@ export default function Home() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('fits')
-        .select('*, profiles!fits_owner_id_fkey(username, avatar_url)')
+        .select('*, profiles!fits_owner_id_fkey(username, avatar_url, latitude, longitude)')
         .eq('is_available', true)
         .order('total_rentals', { ascending: false })
         .limit(10);
@@ -201,7 +205,7 @@ export default function Home() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('fits')
-        .select('*, profiles!fits_owner_id_fkey(username, avatar_url)')
+        .select('*, profiles!fits_owner_id_fkey(username, avatar_url, latitude, longitude)')
         .eq('is_available', true)
         .limit(20);
       if (error) throw error;
