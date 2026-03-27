@@ -179,14 +179,14 @@ export function NotificationDropdown({ unreadCount, onRead }: NotificationDropdo
       onRead();
     }
 
-    const link = getLink(n);
+    const link = await getLink(n);
     if (link !== '#') {
       setOpen(false);
       navigate(link);
     }
   };
 
-  const getLink = (n: Notification) => {
+  const getLink = async (n: Notification): Promise<string> => {
     const meta = n.metadata || {};
     if (n.type === 'message') {
       const convId = meta.conversation_id as string;
@@ -196,8 +196,16 @@ export function NotificationDropdown({ unreadCount, onRead }: NotificationDropdo
       const reqId = meta.request_id as string;
       return reqId ? `/request/${reqId}` : '/outfit-requests';
     }
-    if (n.type === 'rental_approved' || n.type === 'rental_rejected') return '/rentals';
-    if (n.type === 'rental_confirmed' || n.type === 'rental_completed') return '/rentals';
+    // For rental notifications, try to find/create conversation and open chat
+    if (n.type === 'rental_approved' || n.type === 'rental_confirmed') {
+      const otherUserId = meta.renter_id as string || meta.owner_id as string;
+      if (otherUserId && profile) {
+        const convId = await getOrCreateConversation(profile.id, otherUserId);
+        if (convId) return `/messages?conversation=${convId}`;
+      }
+      return '/rentals';
+    }
+    if (n.type === 'rental_rejected' || n.type === 'rental_completed') return '/rentals';
     return '#';
   };
 
