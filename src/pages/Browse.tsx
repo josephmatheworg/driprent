@@ -132,7 +132,7 @@ export default function Browse() {
     setImageSearchResults(null);
   };
 
-  const hasActiveFilters = category !== 'all' || size !== 'all' || search || priceRange[0] > 0 || priceRange[1] < 500;
+  const hasActiveFilters = category !== 'all' || size !== 'all' || search || priceRange[0] > 0 || priceRange[1] < 500 || distanceFilter !== 'all' || sortBy !== 'newest';
   
   const displayFits = imageSearchResults || fits;
 
