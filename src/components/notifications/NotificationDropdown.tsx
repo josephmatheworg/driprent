@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Bell, Check, X } from 'lucide-react';
+import { Bell, Check, X, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -46,14 +46,14 @@ export function NotificationDropdown({ unreadCount, onRead }: NotificationDropdo
       .select('*')
       .eq('user_id', profile.id)
       .order('created_at', { ascending: false })
-      .limit(20);
+      .limit(30);
     setNotifications((data as Notification[]) || []);
   };
 
   useEffect(() => {
     if (open) {
       fetchNotifications().then(() => {
-        // Auto-mark non-actionable notifications as read when dropdown opens
+        // Auto-mark non-actionable notifications as read
         if (profile) {
           supabase
             .from('notifications')
@@ -83,6 +83,30 @@ export function NotificationDropdown({ unreadCount, onRead }: NotificationDropdo
     onRead();
   };
 
+  const deleteNotification = async (notifId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (!profile) return;
+    // Mark as read (we can't delete due to RLS, so just mark read and hide)
+    await supabase
+      .from('notifications')
+      .update({ read: true })
+      .eq('id', notifId);
+    setNotifications(prev => prev.filter(n => n.id !== notifId));
+    onRead();
+  };
+
+  const clearAllNotifications = async () => {
+    if (!profile) return;
+    await supabase
+      .from('notifications')
+      .update({ read: true })
+      .eq('user_id', profile.id);
+    setNotifications([]);
+    onRead();
+    toast({ title: 'All notifications cleared' });
+  };
+
   const handleAcceptRequest = async (n: Notification) => {
     if (!profile) return;
     const rentalId = n.metadata?.rental_id as string;
@@ -91,7 +115,6 @@ export function NotificationDropdown({ unreadCount, onRead }: NotificationDropdo
 
     setProcessingId(n.id);
 
-    // Update rental status to accepted
     const { error } = await supabase
       .from('rentals')
       .update({ status: 'accepted' as any })
@@ -103,12 +126,10 @@ export function NotificationDropdown({ unreadCount, onRead }: NotificationDropdo
       return;
     }
 
-    // Create conversation between owner and renter
     if (renterId) {
       await getOrCreateConversation(profile.id, renterId);
     }
 
-    // Mark this notification as read
     await supabase.from('notifications').update({ read: true }).eq('id', n.id);
 
     toast({ title: 'Request accepted', description: 'A conversation has been created.' });
@@ -143,6 +164,21 @@ export function NotificationDropdown({ unreadCount, onRead }: NotificationDropdo
     onRead();
   };
 
+  const handleNotificationClick = async (n: Notification) => {
+    // Mark as read
+    if (!n.read) {
+      await supabase.from('notifications').update({ read: true }).eq('id', n.id);
+      setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x));
+      onRead();
+    }
+
+    const link = getLink(n);
+    if (link !== '#') {
+      setOpen(false);
+      navigate(link);
+    }
+  };
+
   const getLink = (n: Notification) => {
     const meta = n.metadata || {};
     if (n.type === 'message') {
@@ -175,11 +211,18 @@ export function NotificationDropdown({ unreadCount, onRead }: NotificationDropdo
       <DropdownMenuContent align="end" className="w-80">
         <div className="flex items-center justify-between border-b border-border px-3 py-2">
           <span className="text-sm font-semibold">Notifications</span>
-          {unreadCount > 0 && (
-            <button onClick={markAllRead} className="text-xs text-primary hover:underline">
-              Mark all read
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {notifications.length > 0 && (
+              <button onClick={clearAllNotifications} className="text-xs text-muted-foreground hover:text-destructive">
+                Clear all
+              </button>
+            )}
+            {unreadCount > 0 && (
+              <button onClick={markAllRead} className="text-xs text-primary hover:underline">
+                Mark all read
+              </button>
+            )}
+          </div>
         </div>
         <ScrollArea className="max-h-96">
           {notifications.length === 0 ? (
@@ -191,10 +234,19 @@ export function NotificationDropdown({ unreadCount, onRead }: NotificationDropdo
               <div
                 key={n.id}
                 className={cn(
-                  'flex flex-col gap-1 px-3 py-2.5 border-b border-border last:border-0',
+                  'group flex flex-col gap-1 px-3 py-2.5 border-b border-border last:border-0 relative',
                   !n.read && 'bg-primary/5'
                 )}
               >
+                {/* Delete button */}
+                <button
+                  onClick={(e) => deleteNotification(n.id, e)}
+                  className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-muted"
+                  title="Remove"
+                >
+                  <X className="h-3 w-3 text-muted-foreground" />
+                </button>
+
                 {isRentalRequest(n) ? (
                   <>
                     <span className="text-sm font-semibold">{n.title}</span>
@@ -224,15 +276,16 @@ export function NotificationDropdown({ unreadCount, onRead }: NotificationDropdo
                     </span>
                   </>
                 ) : (
-                  <DropdownMenuItem asChild className="cursor-pointer p-0">
-                    <Link to={getLink(n)} className="flex flex-col gap-0.5">
-                      <span className={cn('text-sm', !n.read && 'font-semibold')}>{n.title}</span>
-                      <span className="text-xs text-muted-foreground line-clamp-2">{n.message}</span>
-                      <span className="text-[10px] text-muted-foreground">
-                        {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
-                      </span>
-                    </Link>
-                  </DropdownMenuItem>
+                  <div
+                    className="cursor-pointer flex flex-col gap-0.5"
+                    onClick={() => handleNotificationClick(n)}
+                  >
+                    <span className={cn('text-sm', !n.read && 'font-semibold')}>{n.title}</span>
+                    <span className="text-xs text-muted-foreground line-clamp-2">{n.message}</span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
+                    </span>
+                  </div>
                 )}
               </div>
             ))
