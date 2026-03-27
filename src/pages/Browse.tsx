@@ -70,7 +70,40 @@ export default function Browse() {
     const { data, error } = await query;
 
     if (!error && data) {
-      setFits(data as unknown as Fit[]);
+      let results = data as unknown as Fit[];
+
+      // Client-side distance filtering & sorting
+      if (profile?.latitude && profile?.longitude) {
+        results = results.map((fit: any) => {
+          const ownerLat = fit.owner?.latitude;
+          const ownerLng = fit.owner?.longitude;
+          if (ownerLat && ownerLng) {
+            const dist = haversineDistance(profile.latitude!, profile.longitude!, ownerLat, ownerLng);
+            return { ...fit, _distance: dist };
+          }
+          return { ...fit, _distance: null };
+        });
+
+        if (distanceFilter !== 'all') {
+          const maxKm = parseInt(distanceFilter);
+          results = results.filter((f: any) => f._distance !== null && f._distance <= maxKm);
+        }
+      }
+
+      // Sorting
+      if (sortBy === 'nearest' && profile?.latitude) {
+        results.sort((a: any, b: any) => {
+          if (a._distance === null) return 1;
+          if (b._distance === null) return -1;
+          return a._distance - b._distance;
+        });
+      } else if (sortBy === 'price_low') {
+        results.sort((a, b) => a.daily_price - b.daily_price);
+      } else if (sortBy === 'price_high') {
+        results.sort((a, b) => b.daily_price - a.daily_price);
+      }
+
+      setFits(results);
     }
     setLoading(false);
   };
