@@ -211,7 +211,7 @@ export default function Browse() {
               )}
             </div>
 
-            <div className="grid gap-6 md:grid-cols-4">
+            <div className="grid gap-6 md:grid-cols-3 lg:grid-cols-6">
               <div>
                 <Label>Category</Label>
                 <Select value={category} onValueChange={setCategory}>
