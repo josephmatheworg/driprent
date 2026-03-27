@@ -154,7 +154,7 @@ export function ChatWindow({ conversationId, otherUser }: ChatWindowProps) {
           </Avatar>
           <span className="font-medium text-foreground">{otherUser.username}</span>
         </div>
-        {rental && (
+        {rental && !['completed', 'returned', 'cancelled'].includes(rental.status) && (
           <ChatSettingsPanel
             rental={rental}
             isOwner={!!isOwner}
