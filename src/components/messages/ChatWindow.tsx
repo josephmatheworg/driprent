@@ -253,12 +253,25 @@ export function ChatWindow({ conversationId, otherUser }: ChatWindowProps) {
       )}
 
       {/* Confirm Deal Dialog */}
-      {rental && (
+      {rental && !['completed', 'returned', 'cancelled'].includes(rental.status) && (
         <ConfirmDealPanel
           open={showConfirmDeal}
           onOpenChange={setShowConfirmDeal}
           rental={rental}
           onConfirmed={handleDealConfirmed}
+        />
+      )}
+
+      {/* Review Dialog */}
+      {canReview && rental && (
+        <ReviewDialog
+          open={showReviewDialog}
+          onOpenChange={setShowReviewDialog}
+          rentalId={rental.id}
+          reviewType="owner"
+          reviewedUserId={rental.owner_id}
+          reviewedFitId={rental.fit_id}
+          onReviewSubmitted={() => { setHasReviewed(true); fetchRental(); }}
         />
       )}
     </div>
