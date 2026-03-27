@@ -15,8 +15,10 @@ import {
 import { Slider } from '@/components/ui/slider';
 import { supabase } from '@/integrations/supabase/client';
 import { CATEGORIES, SIZES, type Fit, type FitCategory, type FitSize } from '@/types/database';
-import { Search, SlidersHorizontal, X, Camera, ImageIcon } from 'lucide-react';
+import { Search, SlidersHorizontal, X, Camera, ImageIcon, MapPin } from 'lucide-react';
 import { ImageSearchModal } from '@/components/browse/ImageSearchModal';
+import { useAuth } from '@/contexts/AuthContext';
+import { haversineDistance, formatDistance } from '@/lib/distance';
 
 export default function Browse() {
   const [searchParams, setSearchParams] = useSearchParams();
