@@ -8,6 +8,8 @@ import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { Star, MapPin } from 'lucide-react';
 import type { Profile, Fit, Review } from '@/types/database';
+import { useAuth } from '@/contexts/AuthContext';
+import { haversineDistance, formatDistance } from '@/lib/distance';
 
 export default function UserProfile() {
   const { id } = useParams<{ id: string }>();
