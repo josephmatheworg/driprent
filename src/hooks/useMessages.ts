@@ -65,12 +65,13 @@ export function useMessages(conversationId: string | null) {
     fetchMessages().then(() => markAsRead());
   }, [conversationId, fetchMessages, markAsRead]);
 
-  // Realtime subscription
+  // Realtime subscription - stable deps to prevent re-subscribing
   useEffect(() => {
     if (!conversationId) return;
 
+    const channelName = `msgs-${conversationId}-${Date.now()}`;
     const channel = supabase
-      .channel(`msgs-${conversationId}`)
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -80,15 +81,13 @@ export function useMessages(conversationId: string | null) {
           filter: `conversation_id=eq.${conversationId}`,
         },
         (payload) => {
+          if (currentConvoRef.current !== conversationId) return;
           const newMsg = payload.new as Message;
           setMessages(prev => {
             if (prev.some(m => m.id === newMsg.id)) return prev;
             return [...prev, newMsg];
           });
-          // Mark as read if from other user
-          if (newMsg.sender_id !== profile?.id) {
-            markAsRead();
-          }
+          markAsRead();
         }
       )
       .on(
@@ -100,6 +99,7 @@ export function useMessages(conversationId: string | null) {
           filter: `conversation_id=eq.${conversationId}`,
         },
         (payload) => {
+          if (currentConvoRef.current !== conversationId) return;
           const updated = payload.new as Message;
           setMessages(prev =>
             prev.map(m => m.id === updated.id ? updated : m)
@@ -111,7 +111,8 @@ export function useMessages(conversationId: string | null) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [conversationId, profile?.id, markAsRead]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversationId]);
 
   const sendMessage = async (text: string) => {
     if (!conversationId || !profile || !text.trim()) return;

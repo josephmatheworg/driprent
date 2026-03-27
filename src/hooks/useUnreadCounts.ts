@@ -40,14 +40,15 @@ export function useUnreadCounts() {
     fetchCounts();
   }, [profile?.id]);
 
-  // Realtime updates
+  // Realtime updates (unique channel per user to prevent duplicates)
   useEffect(() => {
     if (!profile) return;
 
     const channel = supabase
-      .channel('unread-counts')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => fetchCounts())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, () => fetchCounts())
+      .channel(`unread-counts-${profile.id}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, () => fetchCounts())
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, () => fetchCounts())
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'notifications' }, () => fetchCounts())
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };

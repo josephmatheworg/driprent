@@ -151,42 +151,44 @@ export function ChatWindow({ conversationId, otherUser }: ChatWindowProps) {
       )}
 
       {/* Messages */}
-      <ScrollArea className="flex-1 p-4">
-        <div className="flex flex-col gap-3">
-          {loading && <p className="text-center text-sm text-muted-foreground">Loading…</p>}
-          {messages.map((msg) => {
-            const isMine = msg.sender_id === profile?.id;
-            return (
-              <div key={msg.id} className={cn('flex', isMine ? 'justify-end' : 'justify-start')}>
-                <div className="flex max-w-[75%] items-end gap-2">
-                  {!isMine && (
-                    <Avatar className="h-6 w-6 shrink-0">
-                      <AvatarImage src={otherUser.avatar_url || ''} />
-                      <AvatarFallback className="text-[10px]">{otherUser.username?.charAt(0).toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                  )}
-                  <div>
-                    <div
-                      className={cn(
-                        'rounded-2xl px-3.5 py-2 text-sm',
-                        isMine
-                          ? 'rounded-br-sm bg-primary text-primary-foreground'
-                          : 'rounded-bl-sm bg-accent text-accent-foreground'
-                      )}
-                    >
-                      {msg.message_text}
+      <div className="relative flex-1 overflow-y-auto">
+        <div className="flex min-h-full flex-col justify-end p-4">
+          <div className="flex flex-col gap-3">
+            {loading && <p className="text-center text-sm text-muted-foreground">Loading…</p>}
+            {messages.map((msg) => {
+              const isMine = msg.sender_id === profile?.id;
+              return (
+                <div key={msg.id} className={cn('flex', isMine ? 'justify-end' : 'justify-start')}>
+                  <div className="flex max-w-[75%] items-end gap-2">
+                    {!isMine && (
+                      <Avatar className="h-6 w-6 shrink-0">
+                        <AvatarImage src={otherUser.avatar_url || ''} />
+                        <AvatarFallback className="text-[10px]">{otherUser.username?.charAt(0).toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                    )}
+                    <div>
+                      <div
+                        className={cn(
+                          'rounded-2xl px-3.5 py-2 text-sm break-words',
+                          isMine
+                            ? 'rounded-br-sm bg-primary text-primary-foreground'
+                            : 'rounded-bl-sm bg-accent text-accent-foreground'
+                        )}
+                      >
+                        {msg.message_text}
+                      </div>
+                      <p className={cn('mt-1 text-[10px] text-muted-foreground', isMine && 'text-right')}>
+                        {format(new Date(msg.created_at), 'h:mm a')}
+                      </p>
                     </div>
-                    <p className={cn('mt-1 text-[10px] text-muted-foreground', isMine && 'text-right')}>
-                      {format(new Date(msg.created_at), 'h:mm a')}
-                    </p>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-          <div ref={bottomRef} />
+              );
+            })}
+            <div ref={bottomRef} />
+          </div>
         </div>
-      </ScrollArea>
+      </div>
 
       {/* Input */}
       {chatLocked ? (
