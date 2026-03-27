@@ -121,8 +121,15 @@ export function NotificationDropdown({ unreadCount, onRead }: NotificationDropdo
       .eq('id', rentalId);
 
     if (error) {
-      toast({ variant: 'destructive', title: 'Failed to accept', description: error.message });
+      if (error.code === '23505') {
+        toast({ variant: 'destructive', title: 'Cannot accept', description: 'Another deal is already active for this outfit.' });
+        await supabase.from('notifications').update({ read: true }).eq('id', n.id);
+      } else {
+        toast({ variant: 'destructive', title: 'Failed to accept', description: error.message });
+      }
       setProcessingId(null);
+      fetchNotifications();
+      onRead();
       return;
     }
 

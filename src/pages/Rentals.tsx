@@ -79,6 +79,14 @@ export default function Rentals() {
       .eq('id', rentalId);
 
     if (error) {
+      // Handle unique constraint violation (another deal already active for this outfit)
+      if (error.code === '23505') {
+        toast({ variant: 'destructive', title: 'Cannot accept', description: 'Another deal is already active for this outfit. This request has been auto-declined.' });
+        // Auto-cancel this one
+        await supabase.from('rentals').update({ status: 'cancelled' as any }).eq('id', rentalId);
+        fetchRentals();
+        return;
+      }
       toast({ variant: 'destructive', title: 'Update failed', description: error.message });
       return;
     }
