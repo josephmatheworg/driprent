@@ -13,6 +13,7 @@ import { haversineDistance, formatDistance } from '@/lib/distance';
 
 export default function UserProfile() {
   const { id } = useParams<{ id: string }>();
+  const { profile: myProfile } = useAuth();
   const [profileData, setProfileData] = useState<Profile | null>(null);
   const [fits, setFits] = useState<Fit[]>([]);
   const [reviews, setReviews] = useState<(Review & { fit_title?: string })[]>([]);
