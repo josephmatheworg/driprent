@@ -55,24 +55,38 @@ export default function UserProfile() {
 
     setTotalCompletedRentals(count || 0);
 
-    // Fetch reviews for this user's fits
+    // Fetch reviews: both fit-based and user-based reviews
     const fitIds = (fitsData || []).map((f: any) => f.id);
+    const fitMap = new Map((fitsData || []).map((f: any) => [f.id, f.title]));
+    const allReviewsMap = new Map<string, any>();
+
     if (fitIds.length > 0) {
-      const { data: reviewsData } = await supabase
+      const { data: fitReviews } = await supabase
         .from('reviews')
         .select('*, reviewer:profiles!reviews_reviewer_id_fkey(id, username, avatar_url)')
         .in('reviewed_fit_id', fitIds)
         .order('created_at', { ascending: false });
 
-      // Map fit titles onto reviews
-      const fitMap = new Map((fitsData || []).map((f: any) => [f.id, f.title]));
-      setReviews(
-        (reviewsData || []).map((r: any) => ({
-          ...r,
-          fit_title: fitMap.get(r.reviewed_fit_id) || 'Unknown Outfit',
-        }))
-      );
+      (fitReviews || []).forEach((r: any) => {
+        allReviewsMap.set(r.id, { ...r, fit_title: fitMap.get(r.reviewed_fit_id) || 'Unknown Outfit' });
+      });
     }
+
+    const { data: userReviews } = await supabase
+      .from('reviews')
+      .select('*, reviewer:profiles!reviews_reviewer_id_fkey(id, username, avatar_url)')
+      .eq('reviewed_user_id', id!)
+      .order('created_at', { ascending: false });
+
+    (userReviews || []).forEach((r: any) => {
+      if (!allReviewsMap.has(r.id)) {
+        allReviewsMap.set(r.id, { ...r, fit_title: fitMap.get(r.reviewed_fit_id) || 'General Review' });
+      }
+    });
+
+    setReviews(Array.from(allReviewsMap.values()).sort((a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    ));
 
     setLoading(false);
   };

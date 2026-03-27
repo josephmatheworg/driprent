@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ConfirmDealPanel } from '@/components/chat/ConfirmDealPanel';
 import { ChatSettingsPanel } from '@/components/chat/ChatSettingsPanel';
 import { DealSummaryCard } from '@/components/chat/DealSummaryCard';
+import { ReviewDialog } from '@/components/reviews/ReviewDialog';
 
 interface ChatWindowProps {
   conversationId: string;
@@ -27,6 +28,8 @@ export function ChatWindow({ conversationId, otherUser }: ChatWindowProps) {
   const [showConfirmDeal, setShowConfirmDeal] = useState(false);
   const [chatLocked, setChatLocked] = useState(false);
   const [lockMessage, setLockMessage] = useState('Rental completed. Request again to continue.');
+  const [showReviewDialog, setShowReviewDialog] = useState(false);
+  const [hasReviewed, setHasReviewed] = useState(false);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -54,9 +57,26 @@ export function ChatWindow({ conversationId, otherUser }: ChatWindowProps) {
       const status = best.status;
 
       if (['completed', 'returned'].includes(status)) {
-        setRental(null);
+        // Keep rental data for review/directions context
+        setRental({
+          ...best,
+          fit_title: best.fits?.title,
+          owner_latitude: ownerProfile?.latitude ?? null,
+          owner_longitude: ownerProfile?.longitude ?? null,
+          owner_phone: ownerProfile?.phone ?? null,
+        });
         setChatLocked(true);
         setLockMessage('Rental completed. Request again to continue.');
+        // Check if current user already reviewed
+        const isRenter = best.renter_id === profile.id;
+        if (isRenter) {
+          const { count } = await supabase
+            .from('reviews')
+            .select('id', { count: 'exact', head: true })
+            .eq('rental_id', best.id)
+            .eq('reviewer_id', profile.id);
+          setHasReviewed((count ?? 0) > 0);
+        }
       } else if (status === 'cancelled') {
         // Check if there's a confirmed deal for this outfit with someone else (meaning this user was rejected)
         setRental(null);
@@ -118,6 +138,8 @@ export function ChatWindow({ conversationId, otherUser }: ChatWindowProps) {
   };
 
   const isOwner = rental && profile && rental.owner_id === profile.id;
+  const isRenter = rental && profile && rental.renter_id === profile.id;
+  const canReview = isRenter && rental && ['completed', 'returned'].includes(rental.status) && !hasReviewed;
 
   return (
     <div className="flex h-full flex-col">
@@ -132,7 +154,7 @@ export function ChatWindow({ conversationId, otherUser }: ChatWindowProps) {
           </Avatar>
           <span className="font-medium text-foreground">{otherUser.username}</span>
         </div>
-        {rental && (
+        {rental && !['completed', 'returned', 'cancelled'].includes(rental.status) && (
           <ChatSettingsPanel
             rental={rental}
             isOwner={!!isOwner}
@@ -142,16 +164,16 @@ export function ChatWindow({ conversationId, otherUser }: ChatWindowProps) {
         )}
       </div>
 
-      {/* Deal Summary Card */}
+      {/* Deal Summary Card - show for confirmed, active, and completed */}
       {rental && ['confirmed', 'active'].includes(rental.status) && (
         <DealSummaryCard
           fitTitle={rental.fit_title}
           startDate={rental.start_date}
           endDate={rental.end_date}
           status={rental.status}
-          ownerLatitude={rental.owner_latitude}
-          ownerLongitude={rental.owner_longitude}
-          ownerPhone={rental.owner_phone}
+          ownerLatitude={!isOwner ? rental.owner_latitude : null}
+          ownerLongitude={!isOwner ? rental.owner_longitude : null}
+          ownerPhone={!isOwner ? rental.owner_phone : null}
         />
       )}
 
@@ -197,8 +219,16 @@ export function ChatWindow({ conversationId, otherUser }: ChatWindowProps) {
 
       {/* Input */}
       {chatLocked ? (
-        <div className="border-t border-border p-4 pb-[env(safe-area-inset-bottom,0.75rem)] text-center">
+        <div className="border-t border-border p-4 pb-[env(safe-area-inset-bottom,0.75rem)] text-center space-y-2">
           <p className="text-sm text-muted-foreground">{lockMessage}</p>
+          {canReview && (
+            <Button variant="terracotta" size="sm" onClick={() => setShowReviewDialog(true)}>
+              ⭐ Rate & Review
+            </Button>
+          )}
+          {hasReviewed && rental && ['completed', 'returned'].includes(rental.status) && isRenter && (
+            <p className="text-xs text-muted-foreground">✅ You've already reviewed this rental</p>
+          )}
         </div>
       ) : (
         <div className="border-t border-border p-3 pb-[env(safe-area-inset-bottom,0.75rem)]">
@@ -223,12 +253,25 @@ export function ChatWindow({ conversationId, otherUser }: ChatWindowProps) {
       )}
 
       {/* Confirm Deal Dialog */}
-      {rental && (
+      {rental && !['completed', 'returned', 'cancelled'].includes(rental.status) && (
         <ConfirmDealPanel
           open={showConfirmDeal}
           onOpenChange={setShowConfirmDeal}
           rental={rental}
           onConfirmed={handleDealConfirmed}
+        />
+      )}
+
+      {/* Review Dialog */}
+      {canReview && rental && (
+        <ReviewDialog
+          open={showReviewDialog}
+          onOpenChange={setShowReviewDialog}
+          rentalId={rental.id}
+          reviewType="owner"
+          reviewedUserId={rental.owner_id}
+          reviewedFitId={rental.fit_id}
+          onReviewSubmitted={() => { setHasReviewed(true); fetchRental(); }}
         />
       )}
     </div>
