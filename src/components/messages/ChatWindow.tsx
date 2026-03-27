@@ -191,7 +191,7 @@ export function ChatWindow({ conversationId, otherUser }: ChatWindowProps) {
       {/* Input */}
       {chatLocked ? (
         <div className="border-t border-border p-4 pb-[env(safe-area-inset-bottom,0.75rem)] text-center">
-          <p className="text-sm text-muted-foreground">Rental completed. Request again to continue.</p>
+          <p className="text-sm text-muted-foreground">{lockMessage}</p>
         </div>
       ) : (
         <div className="border-t border-border p-3 pb-[env(safe-area-inset-bottom,0.75rem)]">
