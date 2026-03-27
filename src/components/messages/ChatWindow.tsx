@@ -219,8 +219,16 @@ export function ChatWindow({ conversationId, otherUser }: ChatWindowProps) {
 
       {/* Input */}
       {chatLocked ? (
-        <div className="border-t border-border p-4 pb-[env(safe-area-inset-bottom,0.75rem)] text-center">
+        <div className="border-t border-border p-4 pb-[env(safe-area-inset-bottom,0.75rem)] text-center space-y-2">
           <p className="text-sm text-muted-foreground">{lockMessage}</p>
+          {canReview && (
+            <Button variant="terracotta" size="sm" onClick={() => setShowReviewDialog(true)}>
+              ⭐ Rate & Review
+            </Button>
+          )}
+          {hasReviewed && rental && ['completed', 'returned'].includes(rental.status) && isRenter && (
+            <p className="text-xs text-muted-foreground">✅ You've already reviewed this rental</p>
+          )}
         </div>
       ) : (
         <div className="border-t border-border p-3 pb-[env(safe-area-inset-bottom,0.75rem)]">
