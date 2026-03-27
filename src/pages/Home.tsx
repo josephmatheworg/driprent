@@ -104,10 +104,16 @@ function HomeFitCard({ fit, myLat, myLng }: { fit: any; myLat?: number | null; m
   );
 }
 
-function TrendingFitCard({ fit }: { fit: any }) {
+function TrendingFitCard({ fit, myLat, myLng }: { fit: any; myLat?: number | null; myLng?: number | null }) {
   const imageUrl = fit.images?.[0] || '/placeholder.svg';
   const ownerUsername = fit.profiles?.username || 'Unknown';
   const ownerAvatar = fit.profiles?.avatar_url || '';
+  const ownerLat = fit.profiles?.latitude;
+  const ownerLng = fit.profiles?.longitude;
+
+  const distanceText = (ownerLat && ownerLng && myLat && myLng)
+    ? formatDistance(haversineDistance(myLat, myLng, ownerLat, ownerLng))
+    : null;
 
   return (
     <div className="group w-56 shrink-0 overflow-hidden rounded-2xl border border-border bg-card shadow-card transition-all duration-300 hover:shadow-card-hover hover:border-primary/30 sm:w-64">
@@ -121,12 +127,19 @@ function TrendingFitCard({ fit }: { fit: any }) {
       </Link>
       <div className="p-3">
         <h3 className="font-medium text-foreground line-clamp-1 text-sm">{fit.title}</h3>
-        <div className="mt-1.5 flex items-center gap-2">
-          <Avatar className="h-4 w-4">
-            <AvatarImage src={ownerAvatar} />
-            <AvatarFallback className="text-[8px] bg-primary text-primary-foreground">{ownerUsername.charAt(0).toUpperCase()}</AvatarFallback>
-          </Avatar>
-          <span className="text-xs text-muted-foreground truncate">{ownerUsername}</span>
+        <div className="mt-1.5 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <Avatar className="h-4 w-4 shrink-0">
+              <AvatarImage src={ownerAvatar} />
+              <AvatarFallback className="text-[8px] bg-primary text-primary-foreground">{ownerUsername.charAt(0).toUpperCase()}</AvatarFallback>
+            </Avatar>
+            <span className="text-xs text-muted-foreground truncate">{ownerUsername}</span>
+          </div>
+          {distanceText && (
+            <span className="flex items-center gap-0.5 text-xs text-muted-foreground shrink-0">
+              <MapPin className="h-3 w-3" />{distanceText}
+            </span>
+          )}
         </div>
       </div>
     </div>
