@@ -93,15 +93,20 @@ export function useConversations() {
     fetchConversations();
   }, [profile?.id]);
 
-  // Realtime: re-fetch on new messages
+  // Realtime: re-fetch on new messages (unique channel name to prevent duplicates)
   useEffect(() => {
     if (!profile) return;
 
     const channel = supabase
-      .channel('conversations-updates')
+      .channel(`conversations-updates-${profile.id}`)
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'messages' },
+        { event: 'INSERT', schema: 'public', table: 'messages' },
+        () => fetchConversations()
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'conversations' },
         () => fetchConversations()
       )
       .subscribe();
