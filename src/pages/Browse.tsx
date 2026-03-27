@@ -39,7 +39,7 @@ export default function Browse() {
 
   useEffect(() => {
     fetchFits();
-  }, [category, size, priceRange]);
+  }, [category, size, priceRange, profile?.latitude]);
 
   const fetchFits = async () => {
     setLoading(true);
