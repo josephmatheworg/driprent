@@ -139,6 +139,12 @@ export default function UserProfile() {
                   {displayLocation}
                 </span>
               )}
+              {distanceText && (
+                <span className="flex items-center gap-1">
+                  <MapPin className="h-4 w-4" />
+                  {distanceText}
+                </span>
+              )}
               <span className="flex items-center gap-1">
                 <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
                 {overallRating > 0 ? overallRating.toFixed(1) : '0.0'}
