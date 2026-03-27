@@ -118,6 +118,8 @@ export default function Browse() {
     setCategory('all');
     setSize('all');
     setPriceRange([0, 500]);
+    setDistanceFilter('all');
+    setSortBy('newest');
     setSearchParams({});
     setImageSearchResults(null);
   };
