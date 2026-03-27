@@ -35,21 +35,28 @@ export function ChatWindow({ conversationId, otherUser }: ChatWindowProps) {
   const fetchRental = useCallback(async () => {
     if (!profile) return;
     
+    // First check for active/confirmed deals
     const { data } = await supabase
       .from('rentals')
       .select('id, fit_id, start_date, end_date, owner_id, renter_id, status, fits(title), owner:profiles!rentals_owner_id_fkey(latitude, longitude, phone)')
       .or(`and(owner_id.eq.${profile.id},renter_id.eq.${otherUser.id}),and(owner_id.eq.${otherUser.id},renter_id.eq.${profile.id})`)
-      .in('status', ['accepted', 'confirmed', 'active', 'completed', 'returned'] as any)
+      .in('status', ['accepted', 'confirmed', 'active', 'completed', 'returned', 'cancelled'] as any)
       .order('updated_at', { ascending: false })
       .limit(1)
       .maybeSingle();
 
     if (data) {
       const ownerProfile = (data as any).owner;
-      const isCompleted = ['completed', 'returned'].includes((data as any).status);
-      if (isCompleted) {
+      const status = (data as any).status;
+      
+      if (['completed', 'returned'].includes(status)) {
         setRental(null);
         setChatLocked(true);
+        setLockMessage('Rental completed. Request again to continue.');
+      } else if (status === 'cancelled') {
+        setRental(null);
+        setChatLocked(true);
+        setLockMessage('This rental request was declined. Send a new request to continue.');
       } else {
         setRental({
           ...data,
