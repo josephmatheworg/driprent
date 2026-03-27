@@ -48,10 +48,16 @@ function FitCardSkeleton() {
   );
 }
 
-function HomeFitCard({ fit }: { fit: any }) {
+function HomeFitCard({ fit, myLat, myLng }: { fit: any; myLat?: number | null; myLng?: number | null }) {
   const imageUrl = fit.images?.[0] || '/placeholder.svg';
   const ownerUsername = fit.profiles?.username || 'Unknown';
   const ownerAvatar = fit.profiles?.avatar_url || '';
+  const ownerLat = fit.profiles?.latitude;
+  const ownerLng = fit.profiles?.longitude;
+
+  const distanceText = (ownerLat && ownerLng && myLat && myLng)
+    ? formatDistance(haversineDistance(myLat, myLng, ownerLat, ownerLng))
+    : null;
 
   return (
     <div className="group overflow-hidden rounded-2xl border border-border bg-card shadow-card transition-all duration-300 hover:shadow-card-hover hover:border-primary/30">
@@ -74,14 +80,21 @@ function HomeFitCard({ fit }: { fit: any }) {
             {fit.title}
           </h3>
         </Link>
-        <div className="mt-2 flex items-center gap-2">
-          <Avatar className="h-5 w-5">
-            <AvatarImage src={ownerAvatar} />
-            <AvatarFallback className="text-[10px] bg-primary text-primary-foreground">
-              {ownerUsername.charAt(0).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-          <span className="text-xs text-muted-foreground truncate">{ownerUsername}</span>
+        <div className="mt-2 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <Avatar className="h-5 w-5 shrink-0">
+              <AvatarImage src={ownerAvatar} />
+              <AvatarFallback className="text-[10px] bg-primary text-primary-foreground">
+                {ownerUsername.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <span className="text-xs text-muted-foreground truncate">{ownerUsername}</span>
+          </div>
+          {distanceText && (
+            <span className="flex items-center gap-0.5 text-xs text-muted-foreground shrink-0">
+              <MapPin className="h-3 w-3" />{distanceText}
+            </span>
+          )}
         </div>
         <Button variant="default" size="sm" className="mt-3 w-full" asChild>
           <Link to={`/fit/${fit.id}`}>Rent Fit</Link>
