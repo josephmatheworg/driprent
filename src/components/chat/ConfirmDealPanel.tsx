@@ -110,7 +110,12 @@ export function ConfirmDealPanel({ open, onOpenChange, rental, onConfirmed }: Co
     setConfirming(false);
 
     if (error) {
-      toast({ variant: 'destructive', title: 'Failed to confirm', description: error.message });
+      if (error.code === '23505' || error.message?.includes('overlapping')) {
+        setOverlapError('Cannot confirm: another rental overlaps these dates.');
+        toast({ variant: 'destructive', title: 'Date conflict', description: 'These dates are already booked by another confirmed rental.' });
+      } else {
+        toast({ variant: 'destructive', title: 'Failed to confirm', description: error.message });
+      }
       return;
     }
 
