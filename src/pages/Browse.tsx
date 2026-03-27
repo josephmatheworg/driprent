@@ -22,6 +22,7 @@ import { haversineDistance, formatDistance } from '@/lib/distance';
 
 export default function Browse() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { profile } = useAuth();
   const [fits, setFits] = useState<Fit[]>([]);
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
@@ -33,6 +34,8 @@ export default function Browse() {
   const [category, setCategory] = useState<string>(searchParams.get('category') || 'all');
   const [size, setSize] = useState<string>(searchParams.get('size') || 'all');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 500]);
+  const [distanceFilter, setDistanceFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<string>('newest');
 
   useEffect(() => {
     fetchFits();
