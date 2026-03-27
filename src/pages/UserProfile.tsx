@@ -66,6 +66,7 @@ export default function UserProfile() {
           .select('*, reviewer:profiles!reviews_reviewer_id_fkey(id, username, avatar_url)')
           .in('reviewed_fit_id', fitIds)
           .order('created_at', { ascending: false })
+          .then(res => res)
       );
     }
 
@@ -76,6 +77,7 @@ export default function UserProfile() {
         .select('*, reviewer:profiles!reviews_reviewer_id_fkey(id, username, avatar_url)')
         .eq('reviewed_user_id', id!)
         .order('created_at', { ascending: false })
+        .then(res => res)
     );
 
     const results = await Promise.all(reviewQueries);
