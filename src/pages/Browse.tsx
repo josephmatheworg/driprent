@@ -246,7 +246,7 @@ export default function Browse() {
                 </Select>
               </div>
 
-              <div className="md:col-span-2">
+              <div>
                 <Label>Price Range: ${priceRange[0]} - ${priceRange[1]}/day</Label>
                 <Slider
                   value={priceRange}
@@ -256,6 +256,42 @@ export default function Browse() {
                   step={10}
                   className="mt-4"
                 />
+              </div>
+
+              <div>
+                <Label>Distance</Label>
+                <Select value={distanceFilter} onValueChange={setDistanceFilter}>
+                  <SelectTrigger className="mt-1.5">
+                    <SelectValue placeholder="Any distance" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Any Distance</SelectItem>
+                    <SelectItem value="2">Within 2 km</SelectItem>
+                    <SelectItem value="5">Within 5 km</SelectItem>
+                    <SelectItem value="10">Within 10 km</SelectItem>
+                    <SelectItem value="20">Within 20 km</SelectItem>
+                  </SelectContent>
+                </Select>
+                {!profile?.latitude && (
+                  <p className="mt-1 text-xs text-muted-foreground flex items-center gap-1">
+                    <MapPin className="h-3 w-3" /> Enable location in profile for distance filter
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <Label>Sort By</Label>
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="mt-1.5">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="newest">Newest First</SelectItem>
+                    <SelectItem value="nearest">Nearest First</SelectItem>
+                    <SelectItem value="price_low">Price: Low to High</SelectItem>
+                    <SelectItem value="price_high">Price: High to Low</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>
