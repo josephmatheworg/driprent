@@ -164,16 +164,16 @@ export function ChatWindow({ conversationId, otherUser }: ChatWindowProps) {
         )}
       </div>
 
-      {/* Deal Summary Card */}
+      {/* Deal Summary Card - show for confirmed, active, and completed */}
       {rental && ['confirmed', 'active'].includes(rental.status) && (
         <DealSummaryCard
           fitTitle={rental.fit_title}
           startDate={rental.start_date}
           endDate={rental.end_date}
           status={rental.status}
-          ownerLatitude={rental.owner_latitude}
-          ownerLongitude={rental.owner_longitude}
-          ownerPhone={rental.owner_phone}
+          ownerLatitude={!isOwner ? rental.owner_latitude : null}
+          ownerLongitude={!isOwner ? rental.owner_longitude : null}
+          ownerPhone={!isOwner ? rental.owner_phone : null}
         />
       )}
 
