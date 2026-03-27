@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -15,18 +15,34 @@ export function useMessages(conversationId: string | null) {
   const { profile } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
+  const currentConvoRef = useRef(conversationId);
+
+  // Keep ref in sync
+  useEffect(() => {
+    currentConvoRef.current = conversationId;
+  }, [conversationId]);
 
   const fetchMessages = useCallback(async () => {
-    if (!conversationId) return;
+    if (!conversationId) {
+      setMessages([]);
+      return;
+    }
     setLoading(true);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('messages')
       .select('*')
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true });
 
-    setMessages((data as Message[]) || []);
-    setLoading(false);
+    if (error) {
+      console.error('Error fetching messages:', error);
+    }
+
+    // Only set if still on same conversation
+    if (currentConvoRef.current === conversationId) {
+      setMessages((data as Message[]) || []);
+      setLoading(false);
+    }
   }, [conversationId]);
 
   // Mark unread as read
@@ -40,17 +56,21 @@ export function useMessages(conversationId: string | null) {
       .neq('sender_id', profile.id);
   }, [conversationId, profile?.id]);
 
+  // Fetch messages and mark as read when conversation changes
   useEffect(() => {
-    fetchMessages();
-    markAsRead();
-  }, [conversationId]);
+    if (!conversationId) {
+      setMessages([]);
+      return;
+    }
+    fetchMessages().then(() => markAsRead());
+  }, [conversationId, fetchMessages, markAsRead]);
 
-  // Realtime
+  // Realtime subscription
   useEffect(() => {
     if (!conversationId) return;
 
     const channel = supabase
-      .channel(`messages-${conversationId}`)
+      .channel(`msgs-${conversationId}`)
       .on(
         'postgres_changes',
         {
@@ -62,26 +82,50 @@ export function useMessages(conversationId: string | null) {
         (payload) => {
           const newMsg = payload.new as Message;
           setMessages(prev => {
-            // Prevent duplicates
             if (prev.some(m => m.id === newMsg.id)) return prev;
             return [...prev, newMsg];
           });
-          markAsRead();
+          // Mark as read if from other user
+          if (newMsg.sender_id !== profile?.id) {
+            markAsRead();
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload) => {
+          const updated = payload.new as Message;
+          setMessages(prev =>
+            prev.map(m => m.id === updated.id ? updated : m)
+          );
         }
       )
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
-  }, [conversationId]);
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [conversationId, profile?.id, markAsRead]);
 
   const sendMessage = async (text: string) => {
     if (!conversationId || !profile || !text.trim()) return;
 
-    await supabase.from('messages').insert({
+    const { error } = await supabase.from('messages').insert({
       conversation_id: conversationId,
       sender_id: profile.id,
       message_text: text.trim(),
     });
+
+    if (error) {
+      console.error('Error sending message:', error);
+      return;
+    }
 
     // Update conversation last_message_at
     await supabase
@@ -90,5 +134,5 @@ export function useMessages(conversationId: string | null) {
       .eq('id', conversationId);
   };
 
-  return { messages, loading, sendMessage };
+  return { messages, loading, sendMessage, refetch: fetchMessages };
 }
