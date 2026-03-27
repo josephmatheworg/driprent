@@ -55,24 +55,48 @@ export default function UserProfile() {
 
     setTotalCompletedRentals(count || 0);
 
-    // Fetch reviews for this user's fits
+    // Fetch reviews: both fit-based and user-based reviews
     const fitIds = (fitsData || []).map((f: any) => f.id);
-    if (fitIds.length > 0) {
-      const { data: reviewsData } = await supabase
-        .from('reviews')
-        .select('*, reviewer:profiles!reviews_reviewer_id_fkey(id, username, avatar_url)')
-        .in('reviewed_fit_id', fitIds)
-        .order('created_at', { ascending: false });
+    const reviewQueries: Promise<any>[] = [];
 
-      // Map fit titles onto reviews
-      const fitMap = new Map((fitsData || []).map((f: any) => [f.id, f.title]));
-      setReviews(
-        (reviewsData || []).map((r: any) => ({
-          ...r,
-          fit_title: fitMap.get(r.reviewed_fit_id) || 'Unknown Outfit',
-        }))
+    if (fitIds.length > 0) {
+      reviewQueries.push(
+        supabase
+          .from('reviews')
+          .select('*, reviewer:profiles!reviews_reviewer_id_fkey(id, username, avatar_url)')
+          .in('reviewed_fit_id', fitIds)
+          .order('created_at', { ascending: false })
       );
     }
+
+    // Also fetch reviews where reviewed_user_id = this user
+    reviewQueries.push(
+      supabase
+        .from('reviews')
+        .select('*, reviewer:profiles!reviews_reviewer_id_fkey(id, username, avatar_url)')
+        .eq('reviewed_user_id', id!)
+        .order('created_at', { ascending: false })
+    );
+
+    const results = await Promise.all(reviewQueries);
+    const fitMap = new Map((fitsData || []).map((f: any) => [f.id, f.title]));
+
+    // Merge and deduplicate reviews
+    const allReviews = new Map<string, any>();
+    results.forEach(({ data }) => {
+      (data || []).forEach((r: any) => {
+        if (!allReviews.has(r.id)) {
+          allReviews.set(r.id, {
+            ...r,
+            fit_title: fitMap.get(r.reviewed_fit_id) || 'General Review',
+          });
+        }
+      });
+    });
+
+    setReviews(Array.from(allReviews.values()).sort((a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    ));
 
     setLoading(false);
   };
