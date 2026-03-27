@@ -57,9 +57,26 @@ export function ChatWindow({ conversationId, otherUser }: ChatWindowProps) {
       const status = best.status;
 
       if (['completed', 'returned'].includes(status)) {
-        setRental(null);
+        // Keep rental data for review/directions context
+        setRental({
+          ...best,
+          fit_title: best.fits?.title,
+          owner_latitude: ownerProfile?.latitude ?? null,
+          owner_longitude: ownerProfile?.longitude ?? null,
+          owner_phone: ownerProfile?.phone ?? null,
+        });
         setChatLocked(true);
         setLockMessage('Rental completed. Request again to continue.');
+        // Check if current user already reviewed
+        const isRenter = best.renter_id === profile.id;
+        if (isRenter) {
+          const { count } = await supabase
+            .from('reviews')
+            .select('id', { count: 'exact', head: true })
+            .eq('rental_id', best.id)
+            .eq('reviewer_id', profile.id);
+          setHasReviewed((count ?? 0) > 0);
+        }
       } else if (status === 'cancelled') {
         // Check if there's a confirmed deal for this outfit with someone else (meaning this user was rejected)
         setRental(null);
