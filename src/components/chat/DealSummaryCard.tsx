@@ -59,16 +59,16 @@ export function DealSummaryCard({ fitTitle, startDate, endDate, status, ownerLat
           <CalendarDays className="h-3.5 w-3.5 shrink-0" />
           <span>{format(new Date(startDate), 'MMM d')} – {format(new Date(endDate), 'MMM d, yyyy')}</span>
         </div>
-        {isConfirmed && (
+        {isConfirmed && (hasCoords || hasPhone) && (
           <div className="flex gap-2 mt-1">
-            {hasCoords && (
-              <Button variant="outline" size="sm" className="flex-1 gap-2" onClick={handleGetDirections}>
-                <Navigation className="h-3.5 w-3.5" /> Open in Google Maps
-              </Button>
-            )}
             {hasPhone && (
               <Button variant="outline" size="sm" className="flex-1 gap-2" onClick={handleCall}>
-                <Phone className="h-3.5 w-3.5" /> Call
+                📞 Call
+              </Button>
+            )}
+            {hasCoords && (
+              <Button variant="outline" size="sm" className="flex-1 gap-2" onClick={handleGetDirections}>
+                📍 Open in Google Maps
               </Button>
             )}
           </div>
