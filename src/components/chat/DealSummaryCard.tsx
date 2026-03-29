@@ -24,13 +24,13 @@ const statusColors: Record<string, string> = {
 };
 
 export function DealSummaryCard({ fitTitle, startDate, endDate, status, ownerLatitude, ownerLongitude, ownerPhone }: DealSummaryCardProps) {
-  const isConfirmedOrActive = ['confirmed', 'active'].includes(status);
+  const isConfirmed = status === 'confirmed';
   const hasCoords = ownerLatitude != null && ownerLongitude != null;
   const hasPhone = !!ownerPhone;
 
   const handleGetDirections = () => {
     if (hasCoords) {
-      window.open(`https://www.google.com/maps/dir/?api=1&destination=${ownerLatitude},${ownerLongitude}`, '_blank');
+      window.open(`https://www.google.com/maps?q=${ownerLatitude},${ownerLongitude}`, '_blank');
     }
   };
 
