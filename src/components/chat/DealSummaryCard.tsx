@@ -25,18 +25,20 @@ const statusColors: Record<string, string> = {
 
 export function DealSummaryCard({ fitTitle, startDate, endDate, status, ownerLatitude, ownerLongitude, ownerPhone }: DealSummaryCardProps) {
   const isConfirmed = status === 'confirmed';
-  const hasCoords = ownerLatitude != null && ownerLongitude != null;
-  const hasPhone = !!ownerPhone;
 
   const handleGetDirections = () => {
-    if (hasCoords) {
+    if (ownerLatitude != null && ownerLongitude != null) {
       window.open(`https://www.google.com/maps?q=${ownerLatitude},${ownerLongitude}`, '_blank');
+    } else {
+      alert('Location not available');
     }
   };
 
   const handleCall = () => {
-    if (hasPhone) {
-      window.open(`tel:${ownerPhone}`, '_self');
+    if (ownerPhone) {
+      window.location.href = `tel:${ownerPhone}`;
+    } else {
+      alert('Phone not available');
     }
   };
 
