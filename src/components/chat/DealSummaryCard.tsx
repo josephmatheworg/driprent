@@ -25,18 +25,20 @@ const statusColors: Record<string, string> = {
 
 export function DealSummaryCard({ fitTitle, startDate, endDate, status, ownerLatitude, ownerLongitude, ownerPhone }: DealSummaryCardProps) {
   const isConfirmed = status === 'confirmed';
-  const hasCoords = ownerLatitude != null && ownerLongitude != null;
-  const hasPhone = !!ownerPhone;
 
   const handleGetDirections = () => {
-    if (hasCoords) {
+    if (ownerLatitude != null && ownerLongitude != null) {
       window.open(`https://www.google.com/maps?q=${ownerLatitude},${ownerLongitude}`, '_blank');
+    } else {
+      alert('Location not available');
     }
   };
 
   const handleCall = () => {
-    if (hasPhone) {
-      window.open(`tel:${ownerPhone}`, '_self');
+    if (ownerPhone) {
+      window.location.href = `tel:${ownerPhone}`;
+    } else {
+      alert('Phone not available');
     }
   };
 
@@ -59,18 +61,14 @@ export function DealSummaryCard({ fitTitle, startDate, endDate, status, ownerLat
           <CalendarDays className="h-3.5 w-3.5 shrink-0" />
           <span>{format(new Date(startDate), 'MMM d')} – {format(new Date(endDate), 'MMM d, yyyy')}</span>
         </div>
-        {isConfirmed && (hasCoords || hasPhone) && (
+        {isConfirmed && (
           <div className="flex gap-2 mt-1">
-            {hasPhone && (
-              <Button variant="outline" size="sm" className="flex-1 gap-2" onClick={handleCall}>
-                📞 Call
-              </Button>
-            )}
-            {hasCoords && (
-              <Button variant="outline" size="sm" className="flex-1 gap-2" onClick={handleGetDirections}>
-                📍 Open in Google Maps
-              </Button>
-            )}
+            <Button variant="outline" size="sm" className="flex-1 gap-2" onClick={handleCall}>
+              📞 Call
+            </Button>
+            <Button variant="outline" size="sm" className="flex-1 gap-2" onClick={handleGetDirections}>
+              📍 Open in Google Maps
+            </Button>
           </div>
         )}
       </CardContent>
