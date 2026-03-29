@@ -24,13 +24,13 @@ const statusColors: Record<string, string> = {
 };
 
 export function DealSummaryCard({ fitTitle, startDate, endDate, status, ownerLatitude, ownerLongitude, ownerPhone }: DealSummaryCardProps) {
-  const isConfirmedOrActive = ['confirmed', 'active'].includes(status);
+  const isConfirmed = status === 'confirmed';
   const hasCoords = ownerLatitude != null && ownerLongitude != null;
   const hasPhone = !!ownerPhone;
 
   const handleGetDirections = () => {
     if (hasCoords) {
-      window.open(`https://www.google.com/maps/dir/?api=1&destination=${ownerLatitude},${ownerLongitude}`, '_blank');
+      window.open(`https://www.google.com/maps?q=${ownerLatitude},${ownerLongitude}`, '_blank');
     }
   };
 
@@ -59,11 +59,11 @@ export function DealSummaryCard({ fitTitle, startDate, endDate, status, ownerLat
           <CalendarDays className="h-3.5 w-3.5 shrink-0" />
           <span>{format(new Date(startDate), 'MMM d')} – {format(new Date(endDate), 'MMM d, yyyy')}</span>
         </div>
-        {isConfirmedOrActive && (
+        {isConfirmed && (
           <div className="flex gap-2 mt-1">
             {hasCoords && (
               <Button variant="outline" size="sm" className="flex-1 gap-2" onClick={handleGetDirections}>
-                <Navigation className="h-3.5 w-3.5" /> Get Directions
+                <Navigation className="h-3.5 w-3.5" /> Open in Google Maps
               </Button>
             )}
             {hasPhone && (
