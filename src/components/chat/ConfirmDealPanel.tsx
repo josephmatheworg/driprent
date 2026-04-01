@@ -204,9 +204,13 @@ export function ConfirmDealPanel({ open, onOpenChange, rental, onConfirmed }: Co
           </div>
         )}
 
+        {activeRentalBlock && (
+          <p className="text-sm text-destructive font-medium">{activeRentalBlock}</p>
+        )}
+
         <Button
           onClick={handleConfirm}
-          disabled={confirming || !dateRange?.from || !dateRange?.to || !!overlapError}
+          disabled={confirming || !dateRange?.from || !dateRange?.to || !!overlapError || !!activeRentalBlock}
           className="w-full"
         >
           {confirming ? 'Confirming...' : 'Confirm Deal & Lock Dates'}
