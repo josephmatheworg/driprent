@@ -68,6 +68,7 @@ export default function ProfileSetup() {
   const [locationCity, setLocationCity] = useState('');
   const [locationState, setLocationState] = useState('');
   const [locationCountry, setLocationCountry] = useState('');
+  const [locationAddress, setLocationAddress] = useState('');
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
 
