@@ -72,6 +72,9 @@ export default function Profile() {
     setLocationCity(profile.location_city || '');
     setLocationState(profile.location_state || '');
     setLocationCountry(profile.location_country || '');
+    setLocationAddress(profile.location || '');
+    setLatitude((profile as any).latitude ?? null);
+    setLongitude((profile as any).longitude ?? null);
   };
 
   useEffect(() => {
