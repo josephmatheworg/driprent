@@ -19,12 +19,13 @@ import { cn } from '@/lib/utils';
 interface ConfirmDealPanelProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  rental: {
+    rental: {
     id: string;
     fit_id: string;
     start_date: string;
     end_date: string;
     fit_title?: string;
+    renter_id?: string;
   };
   onConfirmed: () => void;
 }
@@ -83,7 +84,34 @@ export function ConfirmDealPanel({ open, onOpenChange, rental, onConfirmed }: Co
     checkOverlap(range);
   };
 
+  const [activeRentalBlock, setActiveRentalBlock] = useState<string | null>(null);
+
+  // Check if renter already has an active rental for this outfit
+  useEffect(() => {
+    if (!open || !rental.fit_id) return;
+    const checkActiveRental = async () => {
+      const { data } = await supabase
+        .from('rentals')
+        .select('id, status')
+        .eq('fit_id', rental.fit_id)
+        .eq('renter_id', rental.renter_id ?? '')
+        .in('status', ['confirmed', 'active'] as any);
+
+      if (data && data.length > 0 && data.some(r => r.id !== rental.id)) {
+        console.log('Blocked: active rental exists for this outfit');
+        setActiveRentalBlock('Already rented – return first');
+      } else {
+        setActiveRentalBlock(null);
+      }
+    };
+    checkActiveRental();
+  }, [open, rental.fit_id, rental.id]);
+
   const handleConfirm = async () => {
+    if (activeRentalBlock) {
+      toast({ variant: 'destructive', title: 'Cannot confirm', description: 'This renter already has an active rental for this outfit.' });
+      return;
+    }
     if (!dateRange?.from || !dateRange?.to) {
       toast({ variant: 'destructive', title: 'Please select dates' });
       return;
@@ -176,9 +204,13 @@ export function ConfirmDealPanel({ open, onOpenChange, rental, onConfirmed }: Co
           </div>
         )}
 
+        {activeRentalBlock && (
+          <p className="text-sm text-destructive font-medium">{activeRentalBlock}</p>
+        )}
+
         <Button
           onClick={handleConfirm}
-          disabled={confirming || !dateRange?.from || !dateRange?.to || !!overlapError}
+          disabled={confirming || !dateRange?.from || !dateRange?.to || !!overlapError || !!activeRentalBlock}
           className="w-full"
         >
           {confirming ? 'Confirming...' : 'Confirm Deal & Lock Dates'}
