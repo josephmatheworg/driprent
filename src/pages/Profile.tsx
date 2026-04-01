@@ -43,6 +43,19 @@ export default function Profile() {
   const [locationCity, setLocationCity] = useState('');
   const [locationState, setLocationState] = useState('');
   const [locationCountry, setLocationCountry] = useState('');
+  const [locationAddress, setLocationAddress] = useState('');
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
+
+  const locationValue = { address: locationAddress, city: locationCity, state: locationState, country: locationCountry, lat: latitude, lng: longitude };
+  const handleLocationChange = (loc: typeof locationValue) => {
+    setLocationAddress(loc.address);
+    setLocationCity(loc.city);
+    setLocationState(loc.state);
+    setLocationCountry(loc.country);
+    setLatitude(loc.lat);
+    setLongitude(loc.lng);
+  };
 
   const { register, handleSubmit, formState: { errors }, reset, setValue: setFormValue } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
