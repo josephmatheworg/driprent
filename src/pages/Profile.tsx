@@ -293,13 +293,10 @@ export default function Profile() {
               </div>
 
               <LocationField
-                city={profile.location_city || ''}
-                state={profile.location_state || ''}
-                country={profile.location_country || ''}
-                onCityChange={() => {}}
-                onStateChange={() => {}}
-                onCountryChange={() => {}}
+                value={{ address: profile.location || '', city: profile.location_city || '', state: profile.location_state || '', country: profile.location_country || '', lat: (profile as any).latitude ?? null, lng: (profile as any).longitude ?? null }}
+                onChange={() => {}}
                 disabled
+              />
               />
             </div>
 
