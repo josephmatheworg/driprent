@@ -106,6 +106,16 @@ export default function ProfileSetup() {
     saveDraft({ phone, locationCity, locationState, locationCountry, bio, latitude, longitude });
   }, [phone, locationCity, locationState, locationCountry, bio, latitude, longitude]);
 
+  const locationValue = { address: locationAddress, city: locationCity, state: locationState, country: locationCountry, lat: latitude, lng: longitude };
+  const handleLocationChange = (loc: typeof locationValue) => {
+    setLocationAddress(loc.address);
+    setLocationCity(loc.city);
+    setLocationState(loc.state);
+    setLocationCountry(loc.country);
+    setLatitude(loc.lat);
+    setLongitude(loc.lng);
+  };
+
   useEffect(() => {
     if (!user) navigate('/login');
   }, [user, navigate]);
