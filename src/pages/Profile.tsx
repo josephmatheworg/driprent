@@ -297,7 +297,6 @@ export default function Profile() {
                 onChange={() => {}}
                 disabled
               />
-              />
             </div>
 
             {/* View Mode Action */}
