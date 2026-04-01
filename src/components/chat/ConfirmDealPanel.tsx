@@ -19,12 +19,13 @@ import { cn } from '@/lib/utils';
 interface ConfirmDealPanelProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  rental: {
+    rental: {
     id: string;
     fit_id: string;
     start_date: string;
     end_date: string;
     fit_title?: string;
+    renter_id?: string;
   };
   onConfirmed: () => void;
 }
