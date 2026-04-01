@@ -68,6 +68,7 @@ export default function ProfileSetup() {
   const [locationCity, setLocationCity] = useState('');
   const [locationState, setLocationState] = useState('');
   const [locationCountry, setLocationCountry] = useState('');
+  const [locationAddress, setLocationAddress] = useState('');
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
 
@@ -104,6 +105,16 @@ export default function ProfileSetup() {
   useEffect(() => {
     saveDraft({ phone, locationCity, locationState, locationCountry, bio, latitude, longitude });
   }, [phone, locationCity, locationState, locationCountry, bio, latitude, longitude]);
+
+  const locationValue = { address: locationAddress, city: locationCity, state: locationState, country: locationCountry, lat: latitude, lng: longitude };
+  const handleLocationChange = (loc: typeof locationValue) => {
+    setLocationAddress(loc.address);
+    setLocationCity(loc.city);
+    setLocationState(loc.state);
+    setLocationCountry(loc.country);
+    setLatitude(loc.lat);
+    setLongitude(loc.lng);
+  };
 
   useEffect(() => {
     if (!user) navigate('/login');
@@ -292,13 +303,8 @@ export default function ProfileSetup() {
                   />
                 </div>
                 <LocationField
-                  city={locationCity}
-                  state={locationState}
-                  country={locationCountry}
-                  onCityChange={setLocationCity}
-                  onStateChange={setLocationState}
-                  onCountryChange={setLocationCountry}
-                  onCoordsChange={(lat, lng) => { setLatitude(lat); setLongitude(lng); }}
+                  value={locationValue}
+                  onChange={handleLocationChange}
                 />
               </div>
             )}

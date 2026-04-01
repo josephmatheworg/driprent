@@ -43,6 +43,19 @@ export default function Profile() {
   const [locationCity, setLocationCity] = useState('');
   const [locationState, setLocationState] = useState('');
   const [locationCountry, setLocationCountry] = useState('');
+  const [locationAddress, setLocationAddress] = useState('');
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
+
+  const locationValue = { address: locationAddress, city: locationCity, state: locationState, country: locationCountry, lat: latitude, lng: longitude };
+  const handleLocationChange = (loc: typeof locationValue) => {
+    setLocationAddress(loc.address);
+    setLocationCity(loc.city);
+    setLocationState(loc.state);
+    setLocationCountry(loc.country);
+    setLatitude(loc.lat);
+    setLongitude(loc.lng);
+  };
 
   const { register, handleSubmit, formState: { errors }, reset, setValue: setFormValue } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -59,6 +72,9 @@ export default function Profile() {
     setLocationCity(profile.location_city || '');
     setLocationState(profile.location_state || '');
     setLocationCountry(profile.location_country || '');
+    setLocationAddress(profile.location || '');
+    setLatitude((profile as any).latitude ?? null);
+    setLongitude((profile as any).longitude ?? null);
   };
 
   useEffect(() => {
@@ -110,9 +126,9 @@ export default function Profile() {
 
       const location = [locationCity, locationState, locationCountry].filter(Boolean).join(', ');
 
-      // Try to get coords if not already set
-      let lat = (profile as any).latitude;
-      let lng = (profile as any).longitude;
+      // Use coords from state
+      let lat = latitude;
+      let lng = longitude;
 
       const { error } = await supabase
         .from('profiles')
@@ -236,16 +252,8 @@ export default function Profile() {
               </div>
 
               <LocationField
-                city={locationCity}
-                state={locationState}
-                country={locationCountry}
-                onCityChange={setLocationCity}
-                onStateChange={setLocationState}
-                onCountryChange={setLocationCountry}
-                onCoordsChange={(lat, lng) => {
-                  (profile as any).latitude = lat;
-                  (profile as any).longitude = lng;
-                }}
+                value={locationValue}
+                onChange={handleLocationChange}
               />
             </div>
 
@@ -285,12 +293,8 @@ export default function Profile() {
               </div>
 
               <LocationField
-                city={profile.location_city || ''}
-                state={profile.location_state || ''}
-                country={profile.location_country || ''}
-                onCityChange={() => {}}
-                onStateChange={() => {}}
-                onCountryChange={() => {}}
+                value={{ address: profile.location || '', city: profile.location_city || '', state: profile.location_state || '', country: profile.location_country || '', lat: (profile as any).latitude ?? null, lng: (profile as any).longitude ?? null }}
+                onChange={() => {}}
                 disabled
               />
             </div>
