@@ -126,9 +126,9 @@ export default function Profile() {
 
       const location = [locationCity, locationState, locationCountry].filter(Boolean).join(', ');
 
-      // Try to get coords if not already set
-      let lat = (profile as any).latitude;
-      let lng = (profile as any).longitude;
+      // Use coords from state
+      let lat = latitude;
+      let lng = longitude;
 
       const { error } = await supabase
         .from('profiles')
