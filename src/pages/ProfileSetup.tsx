@@ -303,13 +303,8 @@ export default function ProfileSetup() {
                   />
                 </div>
                 <LocationField
-                  city={locationCity}
-                  state={locationState}
-                  country={locationCountry}
-                  onCityChange={setLocationCity}
-                  onStateChange={setLocationState}
-                  onCountryChange={setLocationCountry}
-                  onCoordsChange={(lat, lng) => { setLatitude(lat); setLongitude(lng); }}
+                  value={locationValue}
+                  onChange={handleLocationChange}
                 />
               </div>
             )}
