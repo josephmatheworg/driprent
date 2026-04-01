@@ -252,16 +252,8 @@ export default function Profile() {
               </div>
 
               <LocationField
-                city={locationCity}
-                state={locationState}
-                country={locationCountry}
-                onCityChange={setLocationCity}
-                onStateChange={setLocationState}
-                onCountryChange={setLocationCountry}
-                onCoordsChange={(lat, lng) => {
-                  (profile as any).latitude = lat;
-                  (profile as any).longitude = lng;
-                }}
+                value={locationValue}
+                onChange={handleLocationChange}
               />
             </div>
 
