@@ -660,6 +660,14 @@ export type Database = {
         Returns: undefined
       }
       get_profile_id_for_auth: { Args: { _auth_id: string }; Returns: string }
+      get_rental_owner_contact: {
+        Args: { _rental_id: string }
+        Returns: {
+          latitude: number
+          longitude: number
+          phone: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
