@@ -426,6 +426,7 @@ export type Database = {
       }
       rentals: {
         Row: {
+          advance_amount: number | null
           agreement_accepted: boolean | null
           agreement_accepted_at: string | null
           created_at: string
@@ -433,7 +434,13 @@ export type Database = {
           end_date: string
           fit_id: string
           id: string
+          lender_upi: string | null
           owner_id: string
+          payment_deadline: string | null
+          payment_status: string
+          payment_timestamp: string | null
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
           rental_fee: number
           renter_id: string
           return_notes: string | null
@@ -447,6 +454,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          advance_amount?: number | null
           agreement_accepted?: boolean | null
           agreement_accepted_at?: string | null
           created_at?: string
@@ -454,7 +462,13 @@ export type Database = {
           end_date: string
           fit_id: string
           id?: string
+          lender_upi?: string | null
           owner_id: string
+          payment_deadline?: string | null
+          payment_status?: string
+          payment_timestamp?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
           rental_fee: number
           renter_id: string
           return_notes?: string | null
@@ -468,6 +482,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          advance_amount?: number | null
           agreement_accepted?: boolean | null
           agreement_accepted_at?: string | null
           created_at?: string
@@ -475,7 +490,13 @@ export type Database = {
           end_date?: string
           fit_id?: string
           id?: string
+          lender_upi?: string | null
           owner_id?: string
+          payment_deadline?: string | null
+          payment_status?: string
+          payment_timestamp?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
           rental_fee?: number
           renter_id?: string
           return_notes?: string | null
@@ -703,6 +724,8 @@ export type Database = {
         | "disputed"
         | "accepted"
         | "completed"
+        | "awaiting_payment"
+        | "expired"
       request_category: "menswear" | "womenswear" | "unisex"
       request_status: "open" | "negotiating" | "fulfilled" | "closed"
     }
@@ -855,6 +878,8 @@ export const Constants = {
         "disputed",
         "accepted",
         "completed",
+        "awaiting_payment",
+        "expired",
       ],
       request_category: ["menswear", "womenswear", "unisex"],
       request_status: ["open", "negotiating", "fulfilled", "closed"],

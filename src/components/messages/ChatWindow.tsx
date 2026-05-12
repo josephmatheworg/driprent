@@ -12,6 +12,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { ConfirmDealPanel } from '@/components/chat/ConfirmDealPanel';
 import { ChatSettingsPanel } from '@/components/chat/ChatSettingsPanel';
 import { DealSummaryCard } from '@/components/chat/DealSummaryCard';
+import { PaymentPanel } from '@/components/chat/PaymentPanel';
+import { AwaitingPaymentCard } from '@/components/chat/AwaitingPaymentCard';
 import { ReviewDialog } from '@/components/reviews/ReviewDialog';
 
 interface ChatWindowProps {
@@ -41,14 +43,14 @@ export function ChatWindow({ conversationId, otherUser }: ChatWindowProps) {
     // Fetch the most relevant rental between these two users
     const { data: allRentals } = await supabase
       .from('rentals')
-      .select('id, fit_id, start_date, end_date, owner_id, renter_id, status, fits(title), owner:profiles!rentals_owner_id_fkey(latitude, longitude, phone)')
+      .select('id, fit_id, start_date, end_date, owner_id, renter_id, status, advance_amount, payment_deadline, payment_status, lender_upi, fits(title), owner:profiles!rentals_owner_id_fkey(latitude, longitude, phone)')
       .or(`and(owner_id.eq.${profile.id},renter_id.eq.${otherUser.id}),and(owner_id.eq.${otherUser.id},renter_id.eq.${profile.id})`)
-      .in('status', ['accepted', 'confirmed', 'active', 'completed', 'returned', 'cancelled'] as any)
+      .in('status', ['accepted', 'awaiting_payment', 'confirmed', 'active', 'completed', 'returned', 'cancelled', 'expired'] as any)
       .order('updated_at', { ascending: false });
 
     if (allRentals && allRentals.length > 0) {
       // Prioritize active > confirmed > accepted > terminal states
-      const priorityOrder = ['active', 'confirmed', 'accepted', 'completed', 'returned', 'cancelled'];
+      const priorityOrder = ['active', 'confirmed', 'awaiting_payment', 'accepted', 'completed', 'returned', 'expired', 'cancelled'];
       const sorted = [...allRentals].sort((a, b) => {
         return priorityOrder.indexOf((a as any).status) - priorityOrder.indexOf((b as any).status);
       });
@@ -78,10 +80,13 @@ export function ChatWindow({ conversationId, otherUser }: ChatWindowProps) {
           setHasReviewed((count ?? 0) > 0);
         }
       } else if (status === 'cancelled') {
-        // Check if there's a confirmed deal for this outfit with someone else (meaning this user was rejected)
         setRental(null);
         setChatLocked(true);
         setLockMessage('This rental request was declined. Send a new request to continue.');
+      } else if (status === 'expired') {
+        setRental(null);
+        setChatLocked(true);
+        setLockMessage('Booking expired due to payment timeout. Send a new request to continue.');
       } else {
         setRental({
           ...best,
@@ -154,7 +159,7 @@ export function ChatWindow({ conversationId, otherUser }: ChatWindowProps) {
           </Avatar>
           <span className="font-medium text-foreground">{otherUser.username}</span>
         </div>
-        {rental && !['completed', 'returned', 'cancelled'].includes(rental.status) && (
+        {rental && !['completed', 'returned', 'cancelled', 'expired', 'awaiting_payment'].includes(rental.status) && (
           <ChatSettingsPanel
             rental={rental}
             isOwner={!!isOwner}
@@ -164,13 +169,22 @@ export function ChatWindow({ conversationId, otherUser }: ChatWindowProps) {
         )}
       </div>
 
-      {/* Deal Summary Card - show for confirmed, active, and completed */}
+      {/* Awaiting payment — renter pays, lender waits */}
+      {rental && rental.status === 'awaiting_payment' && isRenter && (
+        <PaymentPanel rental={rental} onPaid={fetchRental} />
+      )}
+      {rental && rental.status === 'awaiting_payment' && isOwner && (
+        <AwaitingPaymentCard rental={rental} />
+      )}
+
+      {/* Deal Summary Card - only when paid + confirmed */}
       {rental && rental.status === 'confirmed' && (
         <DealSummaryCard
           fitTitle={rental.fit_title}
           startDate={rental.start_date}
           endDate={rental.end_date}
           status={rental.status}
+          paymentStatus={rental.payment_status}
           ownerLatitude={isRenter ? rental.owner_latitude : null}
           ownerLongitude={isRenter ? rental.owner_longitude : null}
           ownerPhone={isRenter ? rental.owner_phone : null}
