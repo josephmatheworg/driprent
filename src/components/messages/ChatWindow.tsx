@@ -159,7 +159,7 @@ export function ChatWindow({ conversationId, otherUser }: ChatWindowProps) {
           </Avatar>
           <span className="font-medium text-foreground">{otherUser.username}</span>
         </div>
-        {rental && !['completed', 'returned', 'cancelled'].includes(rental.status) && (
+        {rental && !['completed', 'returned', 'cancelled', 'expired', 'awaiting_payment'].includes(rental.status) && (
           <ChatSettingsPanel
             rental={rental}
             isOwner={!!isOwner}
@@ -169,13 +169,22 @@ export function ChatWindow({ conversationId, otherUser }: ChatWindowProps) {
         )}
       </div>
 
-      {/* Deal Summary Card - show for confirmed, active, and completed */}
+      {/* Awaiting payment — renter pays, lender waits */}
+      {rental && rental.status === 'awaiting_payment' && isRenter && (
+        <PaymentPanel rental={rental} onPaid={fetchRental} />
+      )}
+      {rental && rental.status === 'awaiting_payment' && isOwner && (
+        <AwaitingPaymentCard rental={rental} />
+      )}
+
+      {/* Deal Summary Card - only when paid + confirmed */}
       {rental && rental.status === 'confirmed' && (
         <DealSummaryCard
           fitTitle={rental.fit_title}
           startDate={rental.start_date}
           endDate={rental.end_date}
           status={rental.status}
+          paymentStatus={rental.payment_status}
           ownerLatitude={isRenter ? rental.owner_latitude : null}
           ownerLongitude={isRenter ? rental.owner_longitude : null}
           ownerPhone={isRenter ? rental.owner_phone : null}
