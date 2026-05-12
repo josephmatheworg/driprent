@@ -64,7 +64,7 @@ export function DealSummaryCard({ fitTitle, startDate, endDate, status, paymentS
           <CalendarDays className="h-3.5 w-3.5 shrink-0" />
           <span>{format(new Date(startDate), 'MMM d')} – {format(new Date(endDate), 'MMM d, yyyy')}</span>
         </div>
-        {isConfirmed && (
+        {isPaidConfirmed && (
           <div className="flex gap-2 mt-1">
             <Button variant="outline" size="sm" className="flex-1 gap-2" onClick={handleCall}>
               📞 Call
