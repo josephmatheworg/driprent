@@ -50,7 +50,7 @@ export function ChatWindow({ conversationId, otherUser }: ChatWindowProps) {
 
     if (allRentals && allRentals.length > 0) {
       // Prioritize active > confirmed > accepted > terminal states
-      const priorityOrder = ['active', 'confirmed', 'accepted', 'completed', 'returned', 'cancelled'];
+      const priorityOrder = ['active', 'confirmed', 'awaiting_payment', 'accepted', 'completed', 'returned', 'expired', 'cancelled'];
       const sorted = [...allRentals].sort((a, b) => {
         return priorityOrder.indexOf((a as any).status) - priorityOrder.indexOf((b as any).status);
       });
