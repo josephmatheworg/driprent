@@ -12,6 +12,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { ConfirmDealPanel } from '@/components/chat/ConfirmDealPanel';
 import { ChatSettingsPanel } from '@/components/chat/ChatSettingsPanel';
 import { DealSummaryCard } from '@/components/chat/DealSummaryCard';
+import { PaymentPanel } from '@/components/chat/PaymentPanel';
+import { AwaitingPaymentCard } from '@/components/chat/AwaitingPaymentCard';
 import { ReviewDialog } from '@/components/reviews/ReviewDialog';
 
 interface ChatWindowProps {
