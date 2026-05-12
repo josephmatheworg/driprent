@@ -80,10 +80,13 @@ export function ChatWindow({ conversationId, otherUser }: ChatWindowProps) {
           setHasReviewed((count ?? 0) > 0);
         }
       } else if (status === 'cancelled') {
-        // Check if there's a confirmed deal for this outfit with someone else (meaning this user was rejected)
         setRental(null);
         setChatLocked(true);
         setLockMessage('This rental request was declined. Send a new request to continue.');
+      } else if (status === 'expired') {
+        setRental(null);
+        setChatLocked(true);
+        setLockMessage('Booking expired due to payment timeout. Send a new request to continue.');
       } else {
         setRental({
           ...best,
