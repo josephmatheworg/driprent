@@ -703,6 +703,8 @@ export type Database = {
         | "disputed"
         | "accepted"
         | "completed"
+        | "awaiting_payment"
+        | "expired"
       request_category: "menswear" | "womenswear" | "unisex"
       request_status: "open" | "negotiating" | "fulfilled" | "closed"
     }
@@ -855,6 +857,8 @@ export const Constants = {
         "disputed",
         "accepted",
         "completed",
+        "awaiting_payment",
+        "expired",
       ],
       request_category: ["menswear", "womenswear", "unisex"],
       request_status: ["open", "negotiating", "fulfilled", "closed"],
