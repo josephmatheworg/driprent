@@ -9,6 +9,7 @@ interface DealSummaryCardProps {
   startDate: string;
   endDate: string;
   status: string;
+  paymentStatus?: string | null;
   ownerLatitude?: number | null;
   ownerLongitude?: number | null;
   ownerPhone?: string | null;
@@ -17,14 +18,16 @@ interface DealSummaryCardProps {
 const statusColors: Record<string, string> = {
   pending: 'bg-muted text-muted-foreground',
   accepted: 'bg-accent text-accent-foreground',
+  awaiting_payment: 'bg-amber-500/15 text-amber-700 dark:text-amber-400',
   confirmed: 'bg-primary/15 text-primary',
   active: 'bg-primary text-primary-foreground',
   completed: 'bg-muted text-muted-foreground',
+  expired: 'bg-destructive/15 text-destructive',
   cancelled: 'bg-destructive/15 text-destructive',
 };
 
-export function DealSummaryCard({ fitTitle, startDate, endDate, status, ownerLatitude, ownerLongitude, ownerPhone }: DealSummaryCardProps) {
-  const isConfirmed = status === 'confirmed';
+export function DealSummaryCard({ fitTitle, startDate, endDate, status, paymentStatus, ownerLatitude, ownerLongitude, ownerPhone }: DealSummaryCardProps) {
+  const isPaidConfirmed = status === 'confirmed' && paymentStatus === 'paid';
 
   const handleGetDirections = () => {
     if (ownerLatitude != null && ownerLongitude != null) {
