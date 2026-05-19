@@ -4,7 +4,6 @@ import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Calendar } from '@/components/ui/calendar';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,7 +12,7 @@ import type { Fit } from '@/types/database';
 import { Star, ChevronLeft, ChevronRight, Shield, MapPin, Navigation } from 'lucide-react';
 import { format, differenceInDays, eachDayOfInterval, isSameDay } from 'date-fns';
 import { DateRange } from 'react-day-picker';
-import { cn } from '@/lib/utils';
+import { BookingCalendar } from '@/components/booking/BookingCalendar';
 
 export default function FitDetail() {
   const { id } = useParams<{ id: string }>();
