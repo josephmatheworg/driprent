@@ -235,7 +235,7 @@ export function ConfirmDealPanel({ open, onOpenChange, rental, onConfirmed }: Co
 
           <Button
             onClick={handleConfirm}
-            disabled={submitting || !dateRange?.from || !dateRange?.to || !!overlapError || !!activeRentalBlock}
+            disabled={submitting || !dateRange?.from || !!overlapError || !!activeRentalBlock}
             className="w-full"
           >
             {submitting ? 'Sending...' : 'Confirm Booking & Request Payment'}
