@@ -109,11 +109,12 @@ export function ConfirmDealPanel({ open, onOpenChange, rental, onConfirmed }: Co
       toast({ variant: 'destructive', title: 'Cannot confirm', description: 'This renter already has an active rental for this outfit.' });
       return;
     }
-    if (!dateRange?.from || !dateRange?.to) {
+    if (!dateRange?.from) {
       toast({ variant: 'destructive', title: 'Please select dates' });
       return;
     }
-    if (checkOverlap(dateRange)) return;
+    const rangeEnd = dateRange.to ?? dateRange.from;
+    if (checkOverlap({ from: dateRange.from, to: rangeEnd })) return;
 
     const amt = Number(advanceAmount);
     if (!amt || amt < 1 || amt > 100000) {
@@ -127,8 +128,8 @@ export function ConfirmDealPanel({ open, onOpenChange, rental, onConfirmed }: Co
 
     setSubmitting(true);
     const startDate = format(dateRange.from, 'yyyy-MM-dd');
-    const endDate = format(dateRange.to, 'yyyy-MM-dd');
-    const totalDays = Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    const endDate = format(rangeEnd, 'yyyy-MM-dd');
+    const totalDays = Math.ceil((rangeEnd.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24)) + 1;
     const deadline = new Date(Date.now() + PAYMENT_WINDOW_MINUTES * 60 * 1000).toISOString();
 
     const { error } = await supabase
