@@ -99,10 +99,6 @@ export function ConfirmDealPanel({ open, onOpenChange, rental, onConfirmed }: Co
     return false;
   };
 
-  const handleDateSelect = (range: DateRange | undefined) => {
-    setDateRange(range);
-    checkOverlap(range);
-  };
 
   const handleConfirm = async () => {
     if (activeRentalBlock) {
