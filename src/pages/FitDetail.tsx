@@ -80,17 +80,6 @@ export default function FitDetail() {
 
   const isDateBooked = (date: Date) => bookedDates.some(d => isSameDay(d, date));
 
-  const handleDateSelect = (range: DateRange | undefined) => {
-    if (range?.from && range?.to) {
-      const selectedDays = eachDayOfInterval({ start: range.from, end: range.to });
-      if (selectedDays.some(d => isDateBooked(d))) {
-        toast({ variant: 'destructive', title: 'Unavailable dates', description: 'This outfit is already booked for the selected date. Please choose different dates.' });
-        setDateRange(undefined);
-        return;
-      }
-    }
-    setDateRange(range);
-  };
 
   const calculateTotal = () => {
     if (!dateRange?.from || !fit) return null;
