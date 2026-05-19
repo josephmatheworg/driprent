@@ -104,17 +104,18 @@ export default function FitDetail() {
 
   const handleBooking = async () => {
     if (!user) { navigate('/auth'); return; }
-    if (!dateRange?.from || !dateRange?.to || !fit || !profile) {
-      toast({ variant: 'destructive', title: 'Please select dates', description: 'Select your rental start and end dates to continue.' });
+    if (!dateRange?.from || !fit || !profile) {
+      toast({ variant: 'destructive', title: 'Please select dates', description: 'Select your rental start (and optional end) date to continue.' });
       return;
     }
+    const endDate = dateRange.to ?? dateRange.from;
     if (profile.id === fit.owner_id) {
       toast({ variant: 'destructive', title: 'Cannot rent your own fit', description: "You can't rent a fit that you own." });
       return;
     }
 
     // Check for overlap
-    const selectedDays = eachDayOfInterval({ start: dateRange.from, end: dateRange.to });
+    const selectedDays = eachDayOfInterval({ start: dateRange.from, end: endDate });
     const hasOverlap = selectedDays.some(d => isDateBooked(d));
     if (hasOverlap) {
       toast({ variant: 'destructive', title: 'Dates unavailable', description: 'This outfit is already booked for the selected date. Please choose different dates.' });
@@ -144,7 +145,7 @@ export default function FitDetail() {
       renter_id: profile.id,
       owner_id: fit.owner_id,
       start_date: format(dateRange.from, 'yyyy-MM-dd'),
-      end_date: format(dateRange.to, 'yyyy-MM-dd'),
+      end_date: format(endDate, 'yyyy-MM-dd'),
       total_days: totals.days,
       rental_fee: totals.rentalFee,
       deposit_amount: totals.deposit,
@@ -157,6 +158,7 @@ export default function FitDetail() {
     if (error) {
       toast({ variant: 'destructive', title: 'Booking failed', description: error.message });
     } else {
+      sessionStorage.removeItem(`booking-dates:${fit.id}`);
       toast({ title: 'Booking submitted!', description: 'The owner will review your request.' });
       navigate('/rentals');
     }
