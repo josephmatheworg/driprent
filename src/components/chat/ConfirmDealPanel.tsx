@@ -188,17 +188,14 @@ export function ConfirmDealPanel({ open, onOpenChange, rental, onConfirmed }: Co
         <div className="space-y-4">
           <div>
             <Label className="mb-2 block text-sm font-medium">Rental Dates</Label>
-            <Calendar
-              mode="range"
-              selected={dateRange}
-              onSelect={handleDateSelect}
-              disabled={isDateBlocked}
-              className={cn("rounded-md border pointer-events-auto")}
-              numberOfMonths={1}
-              modifiers={{ booked: blockedDates }}
-              modifiersClassNames={{ booked: 'bg-destructive/20 text-destructive line-through' }}
+            <BookingCalendar
+              value={dateRange}
+              onChange={(r) => { setDateRange(r); checkOverlap(r); }}
+              bookedDates={blockedDates}
+              persistKey={`confirm-${rental.id}`}
             />
           </div>
+
 
           {overlapError && <p className="text-sm text-destructive font-medium">{overlapError}</p>}
 
