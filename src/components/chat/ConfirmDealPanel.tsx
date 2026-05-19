@@ -166,14 +166,6 @@ export function ConfirmDealPanel({ open, onOpenChange, rental, onConfirmed }: Co
     onConfirmed();
   };
 
-  const isDateBlocked = (date: Date) => {
-    if (date < new Date()) return true;
-    return blockedDates.some(d =>
-      d.getFullYear() === date.getFullYear() &&
-      d.getMonth() === date.getMonth() &&
-      d.getDate() === date.getDate()
-    );
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
