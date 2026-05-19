@@ -308,25 +308,13 @@ export default function FitDetail() {
               <div className="rounded-xl border border-border bg-card p-6 shadow-card">
                 <h3 className="mb-4 font-display text-2xl">SELECT DATES</h3>
 
-                <div className="overflow-x-auto -mx-2 px-2">
-                  <Calendar
-                    mode="range"
-                    selected={dateRange}
-                    onSelect={handleDateSelect}
-                    disabled={(date) => date < new Date() || isDateBooked(date)}
-                    modifiers={{ booked: bookedDates }}
-                    modifiersClassNames={{ booked: 'bg-destructive/20 text-destructive line-through' }}
-                    className={cn("rounded-md border pointer-events-auto mx-auto")}
-                    numberOfMonths={1}
-                  />
-                </div>
+                <BookingCalendar
+                  value={dateRange}
+                  onChange={setDateRange}
+                  bookedDates={bookedDates}
+                  persistKey={fit.id}
+                />
 
-                {bookedDates.length > 0 && (
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    <span className="inline-block h-3 w-3 rounded bg-destructive/20 mr-1 align-middle" />
-                    Dates marked in red are unavailable
-                  </p>
-                )}
 
                 {totals && (
                   <div className="mt-6 space-y-2 border-t border-border pt-4">
