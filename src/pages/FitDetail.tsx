@@ -338,7 +338,7 @@ export default function FitDetail() {
                   </div>
                 )}
 
-                <Button variant="terracotta" size="lg" className="mt-6 w-full" onClick={handleBooking} disabled={!dateRange?.from || !dateRange?.to || isBooking}>
+                <Button variant="terracotta" size="lg" className="mt-6 w-full" onClick={handleBooking} disabled={!dateRange?.from || isBooking}>
                   {isBooking ? 'Submitting...' : user ? 'Request to Rent' : 'Sign In to Rent'}
                 </Button>
 
