@@ -93,8 +93,9 @@ export default function FitDetail() {
   };
 
   const calculateTotal = () => {
-    if (!dateRange?.from || !dateRange?.to || !fit) return null;
-    const days = differenceInDays(dateRange.to, dateRange.from) + 1;
+    if (!dateRange?.from || !fit) return null;
+    const to = dateRange.to ?? dateRange.from;
+    const days = differenceInDays(to, dateRange.from) + 1;
     const rentalFee = days * fit.daily_price;
     const serviceFee = rentalFee * 0.1;
     const total = rentalFee + serviceFee + fit.deposit_amount;
