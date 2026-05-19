@@ -7,7 +7,6 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
@@ -15,7 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format, eachDayOfInterval, isWithinInterval } from 'date-fns';
 import { DateRange } from 'react-day-picker';
-import { cn } from '@/lib/utils';
+import { BookingCalendar } from '@/components/booking/BookingCalendar';
 
 interface ConfirmDealPanelProps {
   open: boolean;
@@ -100,21 +99,18 @@ export function ConfirmDealPanel({ open, onOpenChange, rental, onConfirmed }: Co
     return false;
   };
 
-  const handleDateSelect = (range: DateRange | undefined) => {
-    setDateRange(range);
-    checkOverlap(range);
-  };
 
   const handleConfirm = async () => {
     if (activeRentalBlock) {
       toast({ variant: 'destructive', title: 'Cannot confirm', description: 'This renter already has an active rental for this outfit.' });
       return;
     }
-    if (!dateRange?.from || !dateRange?.to) {
+    if (!dateRange?.from) {
       toast({ variant: 'destructive', title: 'Please select dates' });
       return;
     }
-    if (checkOverlap(dateRange)) return;
+    const rangeEnd = dateRange.to ?? dateRange.from;
+    if (checkOverlap({ from: dateRange.from, to: rangeEnd })) return;
 
     const amt = Number(advanceAmount);
     if (!amt || amt < 1 || amt > 100000) {
@@ -128,8 +124,8 @@ export function ConfirmDealPanel({ open, onOpenChange, rental, onConfirmed }: Co
 
     setSubmitting(true);
     const startDate = format(dateRange.from, 'yyyy-MM-dd');
-    const endDate = format(dateRange.to, 'yyyy-MM-dd');
-    const totalDays = Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    const endDate = format(rangeEnd, 'yyyy-MM-dd');
+    const totalDays = Math.ceil((rangeEnd.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24)) + 1;
     const deadline = new Date(Date.now() + PAYMENT_WINDOW_MINUTES * 60 * 1000).toISOString();
 
     const { error } = await supabase
@@ -166,14 +162,6 @@ export function ConfirmDealPanel({ open, onOpenChange, rental, onConfirmed }: Co
     onConfirmed();
   };
 
-  const isDateBlocked = (date: Date) => {
-    if (date < new Date()) return true;
-    return blockedDates.some(d =>
-      d.getFullYear() === date.getFullYear() &&
-      d.getMonth() === date.getMonth() &&
-      d.getDate() === date.getDate()
-    );
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -188,17 +176,14 @@ export function ConfirmDealPanel({ open, onOpenChange, rental, onConfirmed }: Co
         <div className="space-y-4">
           <div>
             <Label className="mb-2 block text-sm font-medium">Rental Dates</Label>
-            <Calendar
-              mode="range"
-              selected={dateRange}
-              onSelect={handleDateSelect}
-              disabled={isDateBlocked}
-              className={cn("rounded-md border pointer-events-auto")}
-              numberOfMonths={1}
-              modifiers={{ booked: blockedDates }}
-              modifiersClassNames={{ booked: 'bg-destructive/20 text-destructive line-through' }}
+            <BookingCalendar
+              value={dateRange}
+              onChange={(r) => { setDateRange(r); checkOverlap(r); }}
+              bookedDates={blockedDates}
+              persistKey={`confirm-${rental.id}`}
             />
           </div>
+
 
           {overlapError && <p className="text-sm text-destructive font-medium">{overlapError}</p>}
 
@@ -238,7 +223,7 @@ export function ConfirmDealPanel({ open, onOpenChange, rental, onConfirmed }: Co
 
           <Button
             onClick={handleConfirm}
-            disabled={submitting || !dateRange?.from || !dateRange?.to || !!overlapError || !!activeRentalBlock}
+            disabled={submitting || !dateRange?.from || !!overlapError || !!activeRentalBlock}
             className="w-full"
           >
             {submitting ? 'Sending...' : 'Confirm Booking & Request Payment'}

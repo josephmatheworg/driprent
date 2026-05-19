@@ -4,7 +4,6 @@ import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Calendar } from '@/components/ui/calendar';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,7 +12,7 @@ import type { Fit } from '@/types/database';
 import { Star, ChevronLeft, ChevronRight, Shield, MapPin, Navigation } from 'lucide-react';
 import { format, differenceInDays, eachDayOfInterval, isSameDay } from 'date-fns';
 import { DateRange } from 'react-day-picker';
-import { cn } from '@/lib/utils';
+import { BookingCalendar } from '@/components/booking/BookingCalendar';
 
 export default function FitDetail() {
   const { id } = useParams<{ id: string }>();
@@ -81,21 +80,11 @@ export default function FitDetail() {
 
   const isDateBooked = (date: Date) => bookedDates.some(d => isSameDay(d, date));
 
-  const handleDateSelect = (range: DateRange | undefined) => {
-    if (range?.from && range?.to) {
-      const selectedDays = eachDayOfInterval({ start: range.from, end: range.to });
-      if (selectedDays.some(d => isDateBooked(d))) {
-        toast({ variant: 'destructive', title: 'Unavailable dates', description: 'This outfit is already booked for the selected date. Please choose different dates.' });
-        setDateRange(undefined);
-        return;
-      }
-    }
-    setDateRange(range);
-  };
 
   const calculateTotal = () => {
-    if (!dateRange?.from || !dateRange?.to || !fit) return null;
-    const days = differenceInDays(dateRange.to, dateRange.from) + 1;
+    if (!dateRange?.from || !fit) return null;
+    const to = dateRange.to ?? dateRange.from;
+    const days = differenceInDays(to, dateRange.from) + 1;
     const rentalFee = days * fit.daily_price;
     const serviceFee = rentalFee * 0.1;
     const total = rentalFee + serviceFee + fit.deposit_amount;
@@ -104,17 +93,18 @@ export default function FitDetail() {
 
   const handleBooking = async () => {
     if (!user) { navigate('/auth'); return; }
-    if (!dateRange?.from || !dateRange?.to || !fit || !profile) {
-      toast({ variant: 'destructive', title: 'Please select dates', description: 'Select your rental start and end dates to continue.' });
+    if (!dateRange?.from || !fit || !profile) {
+      toast({ variant: 'destructive', title: 'Please select dates', description: 'Select your rental start (and optional end) date to continue.' });
       return;
     }
+    const endDate = dateRange.to ?? dateRange.from;
     if (profile.id === fit.owner_id) {
       toast({ variant: 'destructive', title: 'Cannot rent your own fit', description: "You can't rent a fit that you own." });
       return;
     }
 
     // Check for overlap
-    const selectedDays = eachDayOfInterval({ start: dateRange.from, end: dateRange.to });
+    const selectedDays = eachDayOfInterval({ start: dateRange.from, end: endDate });
     const hasOverlap = selectedDays.some(d => isDateBooked(d));
     if (hasOverlap) {
       toast({ variant: 'destructive', title: 'Dates unavailable', description: 'This outfit is already booked for the selected date. Please choose different dates.' });
@@ -144,7 +134,7 @@ export default function FitDetail() {
       renter_id: profile.id,
       owner_id: fit.owner_id,
       start_date: format(dateRange.from, 'yyyy-MM-dd'),
-      end_date: format(dateRange.to, 'yyyy-MM-dd'),
+      end_date: format(endDate, 'yyyy-MM-dd'),
       total_days: totals.days,
       rental_fee: totals.rentalFee,
       deposit_amount: totals.deposit,
@@ -157,6 +147,7 @@ export default function FitDetail() {
     if (error) {
       toast({ variant: 'destructive', title: 'Booking failed', description: error.message });
     } else {
+      sessionStorage.removeItem(`booking-dates:${fit.id}`);
       toast({ title: 'Booking submitted!', description: 'The owner will review your request.' });
       navigate('/rentals');
     }
@@ -306,25 +297,13 @@ export default function FitDetail() {
               <div className="rounded-xl border border-border bg-card p-6 shadow-card">
                 <h3 className="mb-4 font-display text-2xl">SELECT DATES</h3>
 
-                <div className="overflow-x-auto -mx-2 px-2">
-                  <Calendar
-                    mode="range"
-                    selected={dateRange}
-                    onSelect={handleDateSelect}
-                    disabled={(date) => date < new Date() || isDateBooked(date)}
-                    modifiers={{ booked: bookedDates }}
-                    modifiersClassNames={{ booked: 'bg-destructive/20 text-destructive line-through' }}
-                    className={cn("rounded-md border pointer-events-auto mx-auto")}
-                    numberOfMonths={1}
-                  />
-                </div>
+                <BookingCalendar
+                  value={dateRange}
+                  onChange={setDateRange}
+                  bookedDates={bookedDates}
+                  persistKey={fit.id}
+                />
 
-                {bookedDates.length > 0 && (
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    <span className="inline-block h-3 w-3 rounded bg-destructive/20 mr-1 align-middle" />
-                    Dates marked in red are unavailable
-                  </p>
-                )}
 
                 {totals && (
                   <div className="mt-6 space-y-2 border-t border-border pt-4">
@@ -348,7 +327,7 @@ export default function FitDetail() {
                   </div>
                 )}
 
-                <Button variant="terracotta" size="lg" className="mt-6 w-full" onClick={handleBooking} disabled={!dateRange?.from || !dateRange?.to || isBooking}>
+                <Button variant="terracotta" size="lg" className="mt-6 w-full" onClick={handleBooking} disabled={!dateRange?.from || isBooking}>
                   {isBooking ? 'Submitting...' : user ? 'Request to Rent' : 'Sign In to Rent'}
                 </Button>
 
