@@ -67,23 +67,30 @@ export function BookingCalendar({
   const handleDayClick = (day: Date) => {
     if (isBooked(day) || day < floor) return;
 
-    // No selection yet OR full range exists → start fresh
-    if (!value?.from || (value.from && value.to && !isSameDay(value.from, value.to))) {
+    // No selection, or a completed range exists → start fresh with only `from`
+    if (!value?.from || (value.from && value.to)) {
+      onChange({ from: day, to: undefined });
+      return;
+    }
+
+    const from = value.from;
+
+    // Same day clicked again → 1 day rental (start === end)
+    if (isSameDay(day, from)) {
       onChange({ from: day, to: day });
       return;
     }
 
-    // Have a from, no proper to → set end
-    const from = value.from;
+    // Earlier date → restart selection from that day
     if (day < from) {
-      onChange({ from: day, to: day });
+      onChange({ from: day, to: undefined });
       return;
     }
 
     // Validate no booked dates in between
     const range = eachDayOfInterval({ start: from, end: day });
     if (range.some((d) => isBooked(d))) {
-      onChange({ from: day, to: day });
+      onChange({ from: day, to: undefined });
       return;
     }
 
@@ -111,13 +118,19 @@ export function BookingCalendar({
           numberOfMonths={numberOfMonths}
           modifiers={{
             booked: bookedDates,
-            rangeStart: value?.from ? [value.from] : [],
-            rangeEnd: value?.to && !isSameDay(value.from!, value.to) ? [value.to] : [],
+            singleDay:
+              value?.from && value?.to && isSameDay(value.from, value.to) ? [value.from] : [],
+            rangeStart:
+              value?.from && (!value?.to || !isSameDay(value.from, value.to)) ? [value.from] : [],
+            rangeEnd:
+              value?.to && value?.from && !isSameDay(value.from, value.to) ? [value.to] : [],
             rangeMiddle: middleDates,
           }}
           modifiersClassNames={{
             booked:
               'bg-destructive/10 text-destructive/60 line-through pointer-events-none opacity-60',
+            singleDay:
+              'bg-emerald-600 text-white font-semibold rounded-full hover:bg-emerald-600 ring-2 ring-rose-500 shadow-md transition-all',
             rangeStart:
               'bg-emerald-600 text-white font-semibold rounded-full hover:bg-emerald-600 ring-2 ring-emerald-300 shadow-md transition-all',
             rangeEnd:
