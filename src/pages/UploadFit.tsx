@@ -135,6 +135,13 @@ export default function UploadFit() {
       return;
     }
 
+    const anyProfile = profile as any;
+    if (anyProfile.latitude == null || anyProfile.longitude == null) {
+      toast({ variant: 'destructive', title: 'Location required', description: 'Please set your location in profile first.' });
+      navigate('/profile');
+      return;
+    }
+
     if (images.length === 0) {
       toast({
         variant: 'destructive',
