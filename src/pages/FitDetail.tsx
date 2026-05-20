@@ -144,7 +144,8 @@ export default function FitDetail() {
 
     setIsBooking(false);
     if (error) {
-      toast({ variant: 'destructive', title: 'Booking failed', description: error.message });
+      const isDup = /already have an active request/i.test(error.message);
+      toast({ variant: 'destructive', title: isDup ? 'Already requested' : 'Booking failed', description: isDup ? 'You already have an active request for this fit.' : error.message });
     } else {
       sessionStorage.removeItem(`booking-dates:${fit.id}`);
       toast({ title: 'Booking submitted!', description: 'The owner will review your request.' });
