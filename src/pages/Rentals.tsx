@@ -205,6 +205,12 @@ export default function Rentals() {
                 </>
               )}
 
+              {!isOwner && rental.status === 'pending' && (
+                <Button size="sm" variant="outline" onClick={() => cancelRequestAsRenter(rental)}>
+                  <XCircle className="h-4 w-4 mr-1" /> Cancel Request
+                </Button>
+              )}
+
               {canMessage(rental) && (
                 <Button size="sm" variant="outline" className="gap-1.5" onClick={() => handleMessage(rental)}>
                   <MessageSquare className="h-4 w-4" /> Message
