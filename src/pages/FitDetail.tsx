@@ -111,17 +111,16 @@ export default function FitDetail() {
       return;
     }
 
-    // Check if renter already has an active rental for this outfit
+    // Check if renter already has an active request for this outfit
     const { data: activeRentals } = await supabase
       .from('rentals')
       .select('id')
       .eq('fit_id', fit.id)
       .eq('renter_id', profile.id)
-      .in('status', ['confirmed', 'active'] as any);
+      .in('status', ['pending', 'accepted', 'awaiting_payment', 'confirmed', 'active'] as any);
 
     if (activeRentals && activeRentals.length > 0) {
-      console.log('Blocked: active rental exists for this outfit');
-      toast({ variant: 'destructive', title: 'Already rented', description: 'You already have an active rental for this outfit. Return it before renting again.' });
+      toast({ variant: 'destructive', title: 'Already requested', description: 'You already have an active request for this fit.' });
       return;
     }
 
