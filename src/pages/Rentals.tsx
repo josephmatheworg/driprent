@@ -91,6 +91,20 @@ export default function Rentals() {
     fetchRentals();
   };
 
+  const cancelRequestAsRenter = async (rental: Rental) => {
+    if (!profile) return;
+    const { error } = await supabase
+      .from('rentals')
+      .update({ status: 'cancelled' as any, cancelled_by: profile.id } as any)
+      .eq('id', rental.id);
+    if (error) {
+      toast({ variant: 'destructive', title: 'Cancel failed', description: error.message });
+      return;
+    }
+    toast({ title: 'Request cancelled', description: 'Your request has been cancelled.' });
+    fetchRentals();
+  };
+
   const handleEarlyReturn = async (rental: Rental) => {
     const { error } = await supabase
       .from('rentals')
