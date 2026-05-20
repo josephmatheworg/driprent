@@ -429,6 +429,7 @@ export type Database = {
           advance_amount: number | null
           agreement_accepted: boolean | null
           agreement_accepted_at: string | null
+          cancelled_by: string | null
           created_at: string
           deposit_amount: number
           end_date: string
@@ -457,6 +458,7 @@ export type Database = {
           advance_amount?: number | null
           agreement_accepted?: boolean | null
           agreement_accepted_at?: string | null
+          cancelled_by?: string | null
           created_at?: string
           deposit_amount: number
           end_date: string
@@ -485,6 +487,7 @@ export type Database = {
           advance_amount?: number | null
           agreement_accepted?: boolean | null
           agreement_accepted_at?: string | null
+          cancelled_by?: string | null
           created_at?: string
           deposit_amount?: number
           end_date?: string
