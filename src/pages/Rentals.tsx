@@ -91,6 +91,20 @@ export default function Rentals() {
     fetchRentals();
   };
 
+  const cancelRequestAsRenter = async (rental: Rental) => {
+    if (!profile) return;
+    const { error } = await supabase
+      .from('rentals')
+      .update({ status: 'cancelled' as any, cancelled_by: profile.id } as any)
+      .eq('id', rental.id);
+    if (error) {
+      toast({ variant: 'destructive', title: 'Cancel failed', description: error.message });
+      return;
+    }
+    toast({ title: 'Request cancelled', description: 'Your request has been cancelled.' });
+    fetchRentals();
+  };
+
   const handleEarlyReturn = async (rental: Rental) => {
     const { error } = await supabase
       .from('rentals')
@@ -189,6 +203,12 @@ export default function Rentals() {
                     <RotateCcw className="h-3.5 w-3.5" /> Returned Early
                   </Button>
                 </>
+              )}
+
+              {!isOwner && rental.status === 'pending' && (
+                <Button size="sm" variant="outline" onClick={() => cancelRequestAsRenter(rental)}>
+                  <XCircle className="h-4 w-4 mr-1" /> Cancel Request
+                </Button>
               )}
 
               {canMessage(rental) && (
