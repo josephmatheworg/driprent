@@ -97,6 +97,12 @@ export default function FitDetail() {
       toast({ variant: 'destructive', title: 'Please select dates', description: 'Select your rental start (and optional end) date to continue.' });
       return;
     }
+    const anyProfile = profile as any;
+    if (anyProfile.latitude == null || anyProfile.longitude == null) {
+      toast({ variant: 'destructive', title: 'Location required', description: 'Please set your location in profile first.' });
+      navigate('/profile');
+      return;
+    }
     const endDate = dateRange.to ?? dateRange.from;
     if (profile.id === fit.owner_id) {
       toast({ variant: 'destructive', title: 'Cannot rent your own fit', description: "You can't rent a fit that you own." });
