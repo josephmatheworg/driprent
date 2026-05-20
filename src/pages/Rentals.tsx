@@ -73,6 +73,14 @@ export default function Rentals() {
 
   const updateRentalStatus = async (rentalId: string, status: RentalStatus) => {
     const rental = rentals.find(r => r.id === rentalId);
+    if (status === 'accepted' && profile) {
+      const anyProfile = profile as any;
+      if (anyProfile.latitude == null || anyProfile.longitude == null) {
+        toast({ variant: 'destructive', title: 'Location required', description: 'Please set your location in profile first.' });
+        navigate('/profile');
+        return;
+      }
+    }
     const { error } = await supabase
       .from('rentals')
       .update({ status: status as any })
