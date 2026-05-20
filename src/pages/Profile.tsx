@@ -109,6 +109,11 @@ export default function Profile() {
       return;
     }
 
+    if (latitude == null || longitude == null || !locationAddress.trim()) {
+      toast({ variant: 'destructive', title: 'Location required', description: 'Please pick your location from the suggestions or use "Use Current Location" so we can save your coordinates.' });
+      return;
+    }
+
     setIsSaving(true);
     try {
       let avatarUrl = profile.avatar_url;
