@@ -31,9 +31,9 @@ export function DealSummaryCard({ fitTitle, startDate, endDate, status, paymentS
 
   const handleGetDirections = () => {
     if (ownerLatitude != null && ownerLongitude != null) {
-      window.open(`https://www.google.com/maps?q=${ownerLatitude},${ownerLongitude}`, '_blank');
+      window.open(`https://www.google.com/maps/dir/?api=1&destination=${ownerLatitude},${ownerLongitude}`, '_blank');
     } else {
-      alert('Location not available');
+      alert('User has not set location yet.');
     }
   };
 
