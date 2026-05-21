@@ -85,11 +85,11 @@ export function ImageSearchModal({ open, onOpenChange, onResults }: ImageSearchM
       if (error) throw error;
 
       if (data.fits && data.fits.length > 0) {
-        toast.success(`Found ${data.fits.length} similar outfits!`);
+        toast.success(data.message || `Found ${data.fits.length} similar outfits!`);
         onResults(data.fits);
         onOpenChange(false);
       } else {
-        toast.info('No outfits found. Try a different image.');
+        toast.info('No similar outfits found. Try a different image.');
       }
     } catch (err) {
       console.error('Image search error:', err);
